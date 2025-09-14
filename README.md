@@ -7,7 +7,7 @@ For me, this repository is both a personal knowledge hub and a way of giving bac
 
 ---
 
-## Project Objective
+## Objective of Repository
 
 The core objective of this repository is to bring together the key lessons I learned during the ProDev Backend Engineering program and present them in a way that makes sense to a learner like me. It’s meant to:
 
