@@ -18,7 +18,7 @@ The core objective of this repository is to bring together the key lessons I lea
 
 ---
 
-## Key Features
+## Projects Undertaken 
 
 ### Databases: From Familiar to Deeper Insights
 
