@@ -1,0 +1,6 @@
+**/**_venv
+**/__pychache__
+**/__vscode__
+.env
+**/db_conn.py
+**/**.pyc
