@@ -8,6 +8,7 @@ This module defines the core database schema:
 - FavoriteMovies (user favorited catalogue)
 """
 
+from typing import Iterable
 import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -37,7 +38,11 @@ class User(AbstractUser):
     Custom user model using email as the unique identifier.
     """
 
-    username = None  # Remove username field from AbstractUser
+    username = models.CharField(
+        unique=True,
+        max_length=150
+    )
+
     user_id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -61,11 +66,21 @@ class User(AbstractUser):
         help_text="User last name."
     )
 
+    is_active = models.BooleanField(
+        default=True
+    )
+
     USERNAME_FIELD = "email"
+    EMAIL_FIELD = "email"
     REQUIRED_FIELDS = []  # No username required
 
     def __str__(self) -> str:
         return f"{self.email}"
+    
+    def save(self, *args, **kwargs):
+        if not self.username:
+            self.username = self.email
+        return super().save(*args, **kwargs)
 
 
 class UserProfile(models.Model):
@@ -89,7 +104,7 @@ class UserProfile(models.Model):
         blank=True,
         help_text="User bio or description."
     )
-    favorite_genres = models.ManyToManyField(
+    genres = models.ManyToManyField(
         to=Genre,
         blank=True,
         help_text="Preferred genres for recommendations."

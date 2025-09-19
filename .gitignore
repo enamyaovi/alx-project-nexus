@@ -4,3 +4,4 @@
 .env
 **/db_conn.py
 **/**.pyc
+**secrets**
