@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.env
+.venv
+env/
+**venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django / SQLite
+*.sqlite3
+*.db
+db.sqlite3
+sqlite.db
+
+# Django static and media files
+/media/
+staticfiles/
+static/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Coverage / testing
+htmlcov/
+.coverage
+coverage.xml
+.pytest_cache/
+nosetests.xml
+test-results.xml
+
+# MacOS / Windows noise
+.DS_Store
+Thumbs.db

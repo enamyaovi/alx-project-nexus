@@ -1,0 +1,38 @@
+// Movie Recommendation WebAPP
+// Database Schema (Refined)
+
+table Genres {
+  id int [pk, note: 'Maps to TMDB genres']
+  name varchar(100) [note: 'Name of the genre']
+}
+
+table Users {
+  user_id uuid [pk]
+  email varchar(255) [unique, note: 'Used for login']
+  password varchar(255) [note: 'Hashed password (Argon2, PBKDF2, etc.)']
+  date_joined timestamp
+  first_name varchar(100)
+  last_name varchar(100)
+  is_active bool
+  is_staff bool
+}
+
+table UserProfile {
+  user uuid [pk, ref: - Users.user_id, note:'One-to-one relation with Users']
+  profile_picture varchar(255) [note:'Django URLField or ImageField']
+  description text
+  favorite_genres int [ref: <> Genres.id, note:'Many-to-many relation with Genres']
+}
+
+table Favorite_Movies {
+  id int [pk, increment] // surrogate primary key
+  movie_id int [note: 'Maps to TMDB movie ids']
+  title varchar(255)
+  description text
+  release_date date
+  poster_url varchar(255) [note: 'URL to movie poster']
+  date_favorited timestamp [default: `now()`, note: 'When user added this movie']
+  favorited_by uuid [ref: > Users.user_id, note: 'Many-to-one relationship with Users']
+  genres int [ref: <> Genres.id, note: 'Many-to-many relation with Genres']
+}
+
