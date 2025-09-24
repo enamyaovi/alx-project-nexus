@@ -1,22 +1,32 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
-import api.views as v
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from api import views
 
 router = DefaultRouter()
-router.register(r'users', v.UserViewSet, basename='users')
+router.register(r"users", views.UserViewSet, basename="users")
+
+app_name = "api"
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('movies/', v.movie_list, name='movies-list'),
-    path('movies/<int:movie_id>/', v.movie_detail, name='movie-detail'),
-    path('movies/<int:movie_id>/favorite_movie/', v.favorite_movie, name='add-movie-favorite'),
-    path('genres/', v.genre_list, name='genre-list'),
+    # Router endpoints - Users
+    path("", include(router.urls)),
 
-    #token obtain
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # Movie endpoints
+    path("movies/", views.movie_list, name="movies-list"),
+    path("movies/<int:movie_id>/", views.movie_detail, name="movie-detail"),
+    path(
+        "movies/<int:movie_id>/favorite_movie/",
+        views.favorite_movie,
+        name="add-movie-favorite",
+    ),
+    path("movies/search/", views.search_movie, name="search-movie"),
+
+    # Genre endpoints
+    path("genres/", views.genre_list, name="genre-list"),
+
+    # Authentication endpoints (JWT)
+    path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]

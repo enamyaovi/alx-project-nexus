@@ -5,11 +5,16 @@ from api.models import UserProfile
 
 User = get_user_model()
 
-@receiver(post_save, sender=User)
-def create_profile(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
 
 @receiver(post_save, sender=User)
-def save_profile(sender, instance, **kwargs):
-    instance.profile.save()
+def manage_user_profile(sender, instance, created, **kwargs):
+    """
+    Ensure that each User has a corresponding UserProfile.
+    Creates a profile when a new User is registered,
+    and saves updates when the User instance is saved.
+    """
+    if created:
+        UserProfile.objects.create(user=instance)
+    else:
+        if hasattr(instance, "profile"):
+            instance.profile.save()
