@@ -2,24 +2,26 @@ import json
 from django.core.cache import cache
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.pagination import PageNumberPagination
-
+from typing import Any, Dict
 
 # Caching Utilities
 def get_or_set_cache(
     key: str,
     fetch_func,
     timeout: int = 60 * 60 * 24,
+    serialize: bool = True,
     *args,
     **kwargs,
-):
+) -> Any | Dict:
     """
-    Retrieve data from cache if available, otherwise call the fetch function,
+    Retrieve data from cache if available, otherwise call fetch_func,
     cache its result, and return it.
 
     Args:
         key (str): Cache key.
         fetch_func (callable): Function to fetch data if not in cache.
-        timeout (int): Time in seconds for cache expiration. Defaults to 24 hours.
+        timeout (int): Expiration time in seconds.
+        serialize (bool): Whether to json.dumps the data before caching.
         *args, **kwargs: Arguments passed to fetch_func.
 
     Returns:
@@ -27,15 +29,22 @@ def get_or_set_cache(
     """
     cached_data = cache.get(key)
     if cached_data:
-        try:
-            return json.loads(cached_data)
-        except (TypeError, json.JSONDecodeError):
-            return cached_data
+        if isinstance(cached_data, str):
+            try:
+                return json.loads(cached_data)
+            except (TypeError, json.JSONDecodeError):
+                return cached_data
+        return cached_data
 
+    # Fetch fresh data
     fresh_data = fetch_func(*args, **kwargs)
 
+    # Cache it
     try:
-        cache.set(key, json.dumps(fresh_data), timeout=timeout)
+        if serialize:
+            cache.set(key, json.dumps(fresh_data), timeout=timeout)
+        else:
+            cache.set(key, fresh_data, timeout=timeout)
     except TypeError:
         cache.set(key, fresh_data, timeout=timeout)
 
@@ -59,7 +68,8 @@ def read_results_json() -> list[dict]:
         return []
 
 
-def get_movie_by_id(target_value: int, results: list[dict] | None = None) -> dict | None:
+def get_movie_by_id_old(
+    target_value: int, results: list[dict] | None = None) -> dict | None:
     """
     Find a movie by ID from a given list of results.
 

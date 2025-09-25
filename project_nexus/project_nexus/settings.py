@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "rest_framework_simplejwt",
+    "rest_framework_api_key"
 ]
 
 MIDDLEWARE = [
@@ -75,8 +76,7 @@ if DEBUG:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
-            "LOCATION": env.str(
-                "REDIS_URL", default="redis://127.0.0.1:6379"), # type: ignore
+            "LOCATION": "redis://127.0.0.1:6379", # type: ignore
         }
     }
 else:
@@ -140,12 +140,28 @@ TMDB_API_KEY = env("TMDB_API_KEY")
 # DRF settings
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.BasicAuthentication",
     ),
+    
+    "DEFAULT_PERMISSION_CLASSES": [
+    "rest_framework.permissions.AllowAny",
+    # "rest_framework_api_key.permissions.HasAPIKey", # NOTE: omitted for now
+    ],
+
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+
+    'DEFAULT_THROTTLE_CLASSES': [
+    'rest_framework.throttling.AnonRateThrottle',
+    'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '500/day',  # For anonymous users
+        'user': '1000/day'  # For authenticated users
+    }
 }
 
 SPECTACULAR_SETTINGS = {

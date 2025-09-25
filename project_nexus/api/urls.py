@@ -21,6 +21,11 @@ urlpatterns = [
         views.favorite_movie,
         name="add-movie-favorite",
     ),
+    path(
+        "movies/<int:movie_id>/remove_favorite/",
+        views.remove_favorite,
+        name="remove-favorite-movie"
+    ),
     path("movies/search/", views.search_movie, name="search-movie"),
 
     # Genre endpoints
@@ -29,4 +34,7 @@ urlpatterns = [
     # Authentication endpoints (JWT)
     path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
+    #NOTE: api key for future versions
+    path("token/retrieve_api_key/", views.get_api_key, name='get-api-key')
 ]

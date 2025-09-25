@@ -159,3 +159,14 @@ class FavoriteMovie(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title} (favorited by {self.favorited_by.email})"
+
+
+#implementing service api keys
+from rest_framework_api_key.models import AbstractAPIKey
+
+class ServiceAPIKey(AbstractAPIKey):
+    class Meta(AbstractAPIKey.Meta):
+        constraints = [
+            models.UniqueConstraint(fields=["name"], name="unique_service_name")
+        ]
+

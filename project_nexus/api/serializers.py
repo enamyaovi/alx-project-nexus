@@ -9,8 +9,7 @@ from rest_framework import serializers, validators
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.models import Genre, UserProfile, FavoriteMovie
-from api.utils import get_movie_by_id
-from api.movie_data_redis import get_trending_movies
+from api.movie_data_redis import get_movie_by_id
 
 User = get_user_model()
 
@@ -127,7 +126,13 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["user_id", "first_name", "last_name", "email"]
+        fields = [
+            "user_id",
+            "first_name",
+            "last_name",
+            "email",
+            "date_joined",
+            ]
         read_only_fields = ["user_id"]
 
     def validate_email(self, value):
@@ -139,15 +144,16 @@ class UserDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Error: {exc}") from exc
 
 
-class UserLightSerializer(serializers.ModelSerializer):
+class UserLightSerializer(serializers.HyperlinkedModelSerializer):
     """Lightweight user serializer exposing only email and full name."""
 
     fullname = serializers.SerializerMethodField()
+    url = serializers.HyperlinkedIdentityField(view_name='api:users-detail', lookup_field='user_id')
 
     class Meta:
         model = User
-        fields = ["email", "fullname"]
-        read_only_fields = ("email",)
+        fields = ["user_id", "email", "fullname", "url"]
+        read_only_fields = ("email", "user_id")
 
     @extend_schema_field(serializers.CharField)
     def get_fullname(self, obj):
@@ -175,7 +181,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         child=serializers.CharField(),
         write_only=True,
     )
-    genres_display = serializers.SerializerMethodField(read_only=True)
+    favorite_genres_display = serializers.SerializerMethodField(read_only=True)
     user = UserLightSerializer(read_only=True)
 
     class Meta:
@@ -185,7 +191,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "profile_picture",
             "description",
             "genres",
-            "genres_display",
+            "favorite_genres_display",
         ]
 
     def validate_profile_picture(self, value):
@@ -222,7 +228,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return profile
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
-    def get_genres_display(self, obj):
+    def get_favorite_genres_display(self, obj):
         """Return saved genres as a list of names."""
         return list(obj.genres.values_list("name", flat=True))
 
@@ -272,12 +278,10 @@ class FavoriteMovieWriteSerializer(serializers.ModelSerializer):
 
     def validate_movie_id(self, value: int) -> int:
         """Ensure the movie exists in cache before allowing favorite."""
-        movie_data = get_movie_by_id(
-            value,
-            results=get_trending_movies().get("results", []),
-        )
+        movie_data = get_movie_by_id(value)
         if not movie_data:
-            raise serializers.ValidationError("Movie not found in cache.")
+            raise serializers.ValidationError(
+                f"Could not find movie with id {value}.")
         return value
 
     def create(self, validated_data: dict):
@@ -300,23 +304,23 @@ class FavoriteMovieWriteSerializer(serializers.ModelSerializer):
 
     def _extract_movie_data(self, validated_data):
         """Helper to transform cached API data into model fields."""
-        movie_data = get_movie_by_id(
-            target_value=validated_data["movie_id"],
-            results=get_trending_movies().get("results", []),
-        )
-        if not movie_data:
-            raise serializers.ValidationError("Movie not found in cache.")
+        movie_data = get_movie_by_id(target_value=validated_data["movie_id"])
+        # if not movie_data:
+            # raise serializers.ValidationError("Movie not found in cache.")
 
         base_url = "https://image.tmdb.org/t/p/w500"
-        poster_path = movie_data.get("poster_path")
+        poster_path = movie_data.get("poster_path") # type: ignore
+
+        genres = movie_data.get('genres', []) # type: ignore
+        genre_ids = [g.get("id") for g in genres if g.get("id") is not None]
 
         return {
-            "movie_id": movie_data.get("id"),
-            "title": movie_data.get("title"),
-            "description": movie_data.get("overview"),
-            "release_date": movie_data.get("release_date"),
+            "movie_id": movie_data.get("id"), # type: ignore
+            "title": movie_data.get("title"), # type: ignore
+            "description": movie_data.get("overview"), # type: ignore
+            "release_date": movie_data.get("release_date"), # type: ignore
             "poster_url": f"{base_url}{poster_path}" if poster_path else None,
-            "genre_ids": movie_data.get("genre_ids", []),
+            "genre_ids": genre_ids,
         }
 
 
@@ -355,9 +359,27 @@ class MovieOutputSerializer(serializers.Serializer):
         return f"{base.rstrip('/')}/{path.lstrip('/')}"
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
-    def get_genres(self, obj):
+    def get_genres(self, obj: dict) -> list[str]:
         """Return the genre names for the movie."""
-        genre_ids = obj.get("genre_ids", [])
+        # Case 1: list endpoint returns genre IDs
+        genre_ids = obj.get("genre_ids")
+        
+        # Case 2: detail endpoint returns list of dicts with id/name
+        if genre_ids is None:
+            genres = obj.get("genres", [])
+            genre_ids = [g["id"] for g in genres if "id" in g]
+    
+        # Query the Genre model for names
         return list(
             Genre.objects.filter(id__in=genre_ids).values_list("name", flat=True)
         )
+
+
+from api.models import ServiceAPIKey
+class GeneralSerializer(serializers.Serializer):
+    service_name = serializers.CharField() 
+
+    def validate_service_name(self, value):
+        if ServiceAPIKey.objects.filter(name=value).exists():
+            raise serializers.ValidationError("Service with this name already exists.")
+        return value

@@ -2,6 +2,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -11,11 +14,15 @@ from drf_spectacular.utils import (
 )
 
 from rest_framework import permissions, status, viewsets, views
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
-from api.models import Genre
+from api.models import Genre, FavoriteMovie, ServiceAPIKey
+from api.utils import IsUser, StandardPagination, get_or_set_cache
+
 from api.movie_data_redis import get_trending_movies, search_movies_from_tmdb
+from api.movie_data_redis import get_movie_by_id
+
 from api.serializers import (
     FavoriteMovieReadSerializer,
     FavoriteMovieWriteSerializer,
@@ -28,9 +35,23 @@ from api.serializers import (
     UserLightSerializer,
     UserProfileSerializer,
 )
-from api.utils import IsUser, StandardPagination, get_movie_by_id
+
 
 User = get_user_model()
+
+#custom method to serialize movie data when not in cache
+def serialize_trending_movies():
+    """
+    Fetch trending movies from TMDB and serialize them.
+    """
+    results = get_trending_movies().get("results", [])
+    serializer = MovieOutputSerializer(
+        results,
+        many=True,
+        context={"image_base_url": "https://image.tmdb.org/t/p/w500"},
+    )
+    return serializer.data
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -41,10 +62,11 @@ class UserViewSet(viewsets.ModelViewSet):
     movie recommendations, and password reset/change operations.
     """
 
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('date_joined')
     serializer_class = UserDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardPagination
+    lookup_field = 'user_id'
 
 
     def get_queryset(self):  # type: ignore
@@ -55,7 +77,7 @@ class UserViewSet(viewsets.ModelViewSet):
         - Regular users: only see their own profile.
         """
         if self.request.user.is_staff:
-            return User.objects.all()
+            return User.objects.all().order_by('date_joined')
         return User.objects.filter(pk=self.request.user.pk)
 
 
@@ -71,6 +93,10 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserLightSerializer
         if self.action in ["edit_profile", "view_catalogue"]:
             return UserProfileSerializer
+        if self.action == "password_reset":
+            return PasswordResetSerializer
+        if self.action == "password_change":
+            return PasswordChangeSerializer
         return super().get_serializer_class()
 
 
@@ -90,21 +116,14 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         Return the appropriate permission classes based on the action.
         """
-        if self.action in ["create", "list"]:
+        if self.action in [
+            "create", "password_change", "password_reset"]:
             permission_classes = [permissions.AllowAny]
         elif self.action in [
-            "update",
-            "partial_update",
-            "destroy",
-            "edit_profile",
-            "view_catalogue",
-        ]:
+            "update", "partial_update", "destroy"]:
             permission_classes = [IsUser]
-        elif self.action in ["password_reset", "password_change"]:
-            permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [permissions.IsAuthenticated]
-
         return [perm() for perm in permission_classes]
 
 
@@ -116,7 +135,7 @@ class UserViewSet(viewsets.ModelViewSet):
         detail=False,
         methods=["GET", "PUT", "PATCH"],
         serializer_class=UserProfileSerializer,
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=[IsUser],
     )
     def edit_profile(self, request):
         """
@@ -132,7 +151,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(
             profile, data=request.data, partial=partial
         )
-        serializer.is_valid(raise_exceptions=True)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -140,16 +159,19 @@ class UserViewSet(viewsets.ModelViewSet):
     @extend_schema(
         responses={200: FavoriteMovieReadSerializer(many=True)},
     )
+    @method_decorator(vary_on_headers("Authorization"))
     @action(
         detail=False,
         methods=["GET"],
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=[IsUser],
     )
     def view_catalogue(self, request):
         """
         Retrieve a list of the logged-in user's favorite movies.
         """
         catalogue = request.user.favorites.all()
+        if not catalogue:
+            return Response({"message":"Browse and add movies to your favorites. Your catalogue is currently empty"}, status=status.HTTP_200_OK)
         serializer = FavoriteMovieReadSerializer(catalogue, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -160,7 +182,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=["GET"],
-        permission_classes=[permissions.IsAuthenticated],
+        permission_classes=[IsUser],
     )
     def recommended_movies(self, request):
         """
@@ -173,7 +195,7 @@ class UserViewSet(viewsets.ModelViewSet):
         fav_genres_set = set(
             request.user.profile.genres.all().values_list("id", flat=True)
         )
-        movies = get_trending_movies(max_pages=5).get("results", []) or []
+        movies = get_trending_movies().get('results' or []) or []
 
         recommended = []
 
@@ -214,21 +236,22 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     @action(
         detail=False,
-        methods=["POST"],
-        permission_classes=[permissions.AllowAny],
-    )
+        methods=["POST"]
+        )
     def password_reset(self, request):
         """
         Handle password reset request.
 
         Generates a reset token and UID for a given email address.
+
+        Current implementation not safe.
         """
         serializer = PasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data["email"]  # type: ignore
+        value = serializer.validated_data["email"]  # type: ignore
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=value)
         except User.DoesNotExist:
             return Response(
                 {"error": "Sorry, user not found!"},
@@ -238,10 +261,11 @@ class UserViewSet(viewsets.ModelViewSet):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
-        #will implement email service for sending emails to user email
+        # TODO, email service for sending emails to user email with token 
+        # make a background task with celery
 
         return Response(
-            {"uid": uid, "token": token},
+            {"message": "Check your email for reset token and valid uid"},
             status=status.HTTP_200_OK,
         )
 
@@ -255,9 +279,8 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     @action(
         detail=False,
-        methods=["POST"],
-        permission_classes=[permissions.AllowAny],
-    )
+        methods=["POST"]
+        )
     def password_change(self, request):
         """
         Handle password change request.
@@ -298,21 +321,26 @@ class UserViewSet(viewsets.ModelViewSet):
     responses=MovieOutputSerializer(many=True),
     description="Retrieve a list of movies from the cached TMDB API response.",
 )
+@cache_page(3600)
 @api_view(["GET"])
 def movie_list(request):
     """
     Retrieve a list of trending movies from TMDB.
     Results are cached for performance.
     """
-    results = get_trending_movies().get("results", [])
-    paginator = StandardPagination()
-    page = paginator.paginate_queryset(results, request)
-    serializer = MovieOutputSerializer(
-        page,
-        many=True,
-        context={"image_base_url": "https://image.tmdb.org/t/p/w500"},
+    cache_key = "movies:trending:serialized"
+
+    # Fetch serialized data from cache or serialize if cache is empty
+    serialized_data = get_or_set_cache(
+        cache_key,
+        lambda: serialize_trending_movies(),
+        serialize = False,
+        timeout=60*60*24,  # 24 hours
     )
-    return paginator.get_paginated_response(serializer.data)
+
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(serialized_data, request)
+    return paginator.get_paginated_response(page)
 
 
 @extend_schema(
@@ -322,15 +350,14 @@ def movie_list(request):
         404: OpenApiResponse(description="Movie not found"),
     },
 )
+@cache_page(3600)
 @api_view(["GET"])
 def movie_detail(request, movie_id: int):
     """
     Retrieve details of a movie by TMDB ID.
     """
-    movie = get_movie_by_id(
-        movie_id,
-        results=get_trending_movies(max_pages=4).get("results", []),
-    )
+    movie = get_movie_by_id(movie_id) # type: ignore
+
     if not movie:
         return Response(
             {"detail": "Sorry, movie not found"},
@@ -352,6 +379,7 @@ def movie_detail(request, movie_id: int):
         400: OpenApiResponse(description="Validation errors"),
     },
 )
+@permission_classes([permissions.IsAuthenticated])
 @api_view(["POST"])
 def favorite_movie(request, movie_id: int):
     """
@@ -368,7 +396,41 @@ def favorite_movie(request, movie_id: int):
         favorite,
         context={"request": request},
     )
-    return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+    return Response(
+        {
+        'message':'Movie Added to favorites',
+        'data':read_serializer.data
+        }, 
+            status=status.HTTP_201_CREATED
+            )
+
+
+@extend_schema(
+    description="Remove a movie from the authenticated user's favorites catalogue.",
+    responses={
+        204: OpenApiResponse(description="Movie successfully removed"),
+        404: OpenApiResponse(description="Movie not found in catalogue"),
+    },
+)
+@permission_classes([permissions.IsAuthenticated])
+@api_view(["DELETE"])
+def remove_favorite(request, movie_id: int):
+    """
+    Remove a given movie from the user's favorite catalogue.
+    """
+    movie = FavoriteMovie.objects.filter(
+        movie_id=movie_id,
+        favorited_by=request.user
+    ).first()
+
+    if not movie:
+        return Response(
+            {"detail": "Movie not found in your catalogue."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    movie.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(
@@ -391,6 +453,7 @@ def favorite_movie(request, movie_id: int):
     ],
     responses={200: MovieOutputSerializer(many=True)},
 )
+@cache_page(timeout=3600)
 @api_view(["GET"])
 def search_movie(request):
     """
@@ -421,6 +484,8 @@ def search_movie(request):
         many=True,
         context={"image_base_url": "https://image.tmdb.org/t/p/w500"},
     )
+    if not serializer.data:
+        return Response({"message":f"Movie: {search_query} Not found"}, status=status.HTTP_404_NOT_FOUND)
     return paginator.get_paginated_response(serializer.data)
 
 
@@ -428,6 +493,7 @@ def search_movie(request):
     description="Retrieve list of available movie genres.",
     responses={200: GenreSerializer(many=True)},
 )
+@cache_page(timeout=3600)
 @api_view(["GET"])
 def genre_list(request):
     """
@@ -438,3 +504,32 @@ def genre_list(request):
     page = paginator.paginate_queryset(genres, request)
     serializer = GenreSerializer(page, many=True)
     return paginator.get_paginated_response(serializer.data)
+
+
+# NOTE: not necessary or within project scope
+from api.serializers import GeneralSerializer
+@extend_schema(
+    description="Return an api key for services to access some protected views",
+    responses={
+        200:OpenApiResponse(description='returns api key to be used')
+    }
+)
+@api_view(["POST"])
+def get_api_key(request):
+    """
+    Generate API key for server-side clients (one-time view).
+    """
+    serializer = GeneralSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    service_name = serializer.validated_data["service_name"] # type: ignore
+
+    api_key, key = ServiceAPIKey.objects.create_key(name=service_name) # type: ignore
+
+    return Response(
+        {
+            "message": "API key created successfully",
+            "name": service_name,
+            "api_key": key,
+        },
+        status=status.HTTP_201_CREATED,
+    )

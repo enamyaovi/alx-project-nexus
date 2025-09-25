@@ -2,7 +2,6 @@ import requests
 from django.core.cache import cache
 from django.conf import settings
 from datetime import datetime
-import environ
 from api.utils import get_or_set_cache
 
 TMDB_API_KEY = settings.TMDB_API_KEY
@@ -51,8 +50,33 @@ def fetch_movies_from_tmdb(
             # TODO: replace print with proper logging later
             print(f"[{datetime.now()}] TMDB fetch failed (page {page}): {resp.status_code}")
             print(resp.text)
-
     return all_results
+
+
+def fetch_movie_from_tmdb(movie_id: int) -> dict | None:
+    """
+    Fetch a single movie by TMDB ID (does not touch cache directly).
+
+    Args:
+        movie_id (int): The TMDB movie ID.
+
+    Returns:
+        dict | None: Movie data if found, otherwise None.
+    """
+    url = f"https://api.themoviedb.org/3/movie/{movie_id}"
+    params = {**PARAMS, "language": "en-US"}  # unpack global PARAMS, keep language
+
+
+
+    resp = requests.get(url, params=params, headers=HEADERS)
+    
+    if resp.status_code == 200:
+        return resp.json()
+    else:
+        # TODO: replace print with proper logging later
+        print(f"[{datetime.now()}] TMDB fetch failed for movie {movie_id}: {resp.status_code}")
+        print(resp.text)
+        return None
 
 
 def search_movies_from_tmdb(
@@ -118,5 +142,35 @@ def get_trending_movies(
         cache_key,
         fetch_movies_from_tmdb,
         ttl,
+        serialize=False,
         max_pages=max_pages
     )
+
+def get_movie_by_id(target_value: int) -> dict | None:
+    """
+    Retrieve a single movie by its TMDB ID, using per-movie cache.
+
+    Args:
+        target_value (int): The TMDB movie ID.
+
+    Returns:
+        dict | None: Movie dict if found, otherwise None.
+    """
+    cache_key = f"movie:detail:{target_value}"
+
+    cached = get_or_set_cache(
+        cache_key,
+        fetch_movie_from_tmdb,
+        timeout=60 * 60 * 24,
+        serialize=True,
+        movie_id=target_value
+    )
+
+    if not cached:
+        return None
+
+    # Normalize: unwrap 'results' if present
+    if "results" in cached and isinstance(cached["results"], dict):
+        return cached["results"]
+
+    return cached
