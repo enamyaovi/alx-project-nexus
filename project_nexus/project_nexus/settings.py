@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "corsheaders",
     "django.contrib.staticfiles",
 
     # Internal apps
@@ -38,11 +39,13 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "rest_framework_simplejwt",
-    "rest_framework_api_key"
+    "rest_framework_api_key",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -90,7 +93,7 @@ else:
 
     # Production security settings
     SESSION_COOKIE_SECURE = True
-    SESSION_COOKIE_HTTPONLY = True  # safer against XSS
+    SESSION_COOKIE_HTTPONLY = True  
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_HTTPONLY = True
     SECURE_SSL_REDIRECT = True
@@ -125,14 +128,19 @@ USE_TZ = True
 
 # Static & Media
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"  # added for collectstatic
+STATIC_ROOT = BASE_DIR / "staticfiles"  
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 
 # Custom User model
 AUTH_USER_MODEL = "api.User"
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # External API keys
 TMDB_API_KEY = env("TMDB_API_KEY")
@@ -143,7 +151,7 @@ REST_FRAMEWORK = {
 
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
+        # "rest_framework.authentication.BasicAuthentication", NOTE: use jwt
     ),
     
     "DEFAULT_PERMISSION_CLASSES": [
@@ -178,7 +186,7 @@ SPECTACULAR_SETTINGS = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": False,
+    "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": False,
     "ALGORITHM": "HS256",

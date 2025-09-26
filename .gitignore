@@ -5,3 +5,69 @@
 **/db_conn.py
 **/**.pyc
 **secrets**
+**/staticfiles
+
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtualenv
+venv/
+ENV/
+env/
+.nexus_venv/
+*.env
+*.venv
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Django specific
+*.log
+*.pot
+*.pyc
+db.sqlite3
+db.sqlite3-journal
+
+# Static & media
+/staticfiles/          # Collected static files (production)
+/media/                # User-uploaded files (if any)
+
+/project_nexus/static/ # Optional: if you’re generating test assets here
+!project_nexus/static/ # but allow committed source static (CSS overrides etc.)
+
+# Redis dump files
+dump.rdb
+*.rdb
+*.aof
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Coverage / testing
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+*.py,cover
+.cache
+.nox/
+.pytest_cache/
+
+# Render / deployment
+*.bak
+*.backup
+*.log.*
