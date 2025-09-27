@@ -40,6 +40,7 @@ env/
 *.pyc
 db.sqlite3
 db.sqlite3-journal
+sqlite.db
 
 # Static & media
 /staticfiles/          # Collected static files (production)

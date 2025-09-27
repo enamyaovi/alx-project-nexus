@@ -1,0 +1,5405 @@
+{
+	"info": {
+		"_postman_id": "5ddb0e9d-9028-4df3-adbb-33ef77101612",
+		"name": "ALX Project Nexus - Movie Recommendation API",
+		"description": "## Project Nexus Movie API\n\nThe **Project Nexus Movie API** provides trending and recommended movie data, user account management, and personalized recommendations. It integrates with **TMDB** for movie data, caches responses in **Redis** for performance, and delivers consistent **JSON responses**. Designed for frontend, mobile, and backend developers needing user-specific movie data.\n\n---\n\n## Disclaimer\n\nThe examples in this documentation have been modified for security reasons. Sensitive values such as **JWT tokens, user IDs, and private request/response data** have been removed or altered. The sample requests and responses are **illustrative only** and may not reflect the exact live data. For interactive testing, please visit the [<b>Swagger UI</b>](https://alx-project-nexus-movie-api.onrender.com/api/v1/docs/schema/swagger-ui/) hosted with the API.\n\n---\n\n## API Capabilities\n\n**Public Endpoints**\n\n- Access trending movies, search movies, and view genres **without authentication**.\n    \n\n**Protected Endpoints**\n\n- User-specific operations such as managing favorites, profile edits, and recommended movies require **JWT authentication**.\n    \n\n**Rate Limits**\n\n- Authenticated users: 1000 requests/day\n    \n- Anonymous users: 500 requests/day\n    \n\n**Protocol**: HTTPS only (HTTP requests are redirected to HTTPS)  \n**Response Format**: JSON; errors returned under the `error` key\n\n---\n\n## Functionality\n\n- View a list of trending movies (up to 60, ranked by popularity, paginated)\n    \n- Search movies by title\n    \n- Save movies to a personal watchlist or catalog\n    \n- Create and manage user accounts and profiles\n    \n- Access personalized movie recommendations\n    \n\n---\n\n## Getting Started\n\n### Public (Read-Only) Users\n\n- No sign-up or API key required\n    \n- Simply make requests to public endpoints\n    \n\nExample:\n\n``` markdown\nGET https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/\n\n ```\n\n### Authenticated Users\n\n1. Create a user account via `/users/` (POST)\n    \n2. Obtain a JWT token via `/token/` (POST)\n    \n3. Include the token in the Authorization header:\n    \n\n``` powershell\nAuthorization: Bearer <token>\n\n ```\n\n- Access protected endpoints such as favorites, profile edits, and recommended movies\n    \n\n---\n\n## Authentication\n\n- **JWT-based**: Access and refresh tokens via `/token/` and `/token/refresh/`\n    \n- **Errors**:\n    \n    - 401 Unauthorized → Missing or invalid token\n        \n    - 403 Forbidden → Insufficient permissions\n        \n\n---\n\n## Rate Limiting\n\nEvery response includes headers to track usage:\n\n- `X-RateLimit-Limit`: Maximum requests per day\n    \n- `X-RateLimit-Remaining`: Requests left in the current window\n    \n- `X-RateLimit-Reset`: Time when the window resets (UTC epoch seconds)\n    \n\n**HTTP 429** → Rate limit exceeded  \n**HTTP 503** → Temporary server overload; retry after a few minutes\n\n---\n\n## Error Handling\n\n- **200 OK** – Request successful\n    \n- **201 Created** – Resource created successfully\n    \n- **204 No Content** – Resource deleted successfully\n    \n- **400 Bad Request** – Invalid payload or parameters\n    \n- **401 Unauthorized** – Missing or invalid authentication token\n    \n- **403 Forbidden** – Insufficient permissions\n    \n- **404 Not Found** – Resource does not exist\n    \n- **500 Internal Server Error** – Unexpected server error\n    \n- **502 Bad Gateway** – External API failure\n    \n\n---\n\n## Folder Overview\n\n- **Movies**: Trending movies, search, and details\n    \n- **Genres**: List and explore movie genres\n    \n- **Users**: Profile management, password updates, recommendations, favorites\n    \n- **Authentication / Tokens**: Obtain and refresh JWT tokens\n    \n\n---\n\n## Response Format\n\nAll responses are in **JSON**. Errors follow standard HTTP status codes and are included in the JSON payload.\n\n---\n\n## Tips\n\n- Start with **public endpoints** to explore movie data\n    \n- Use **JWT authentication** for personalized features like favorites and recommendations\n    \n\n---\n\n## Need Help?\n\n- Check our tutorials or help documentation\n    \n- Visit our FAQ page or developer forum for community support",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40330540"
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Register Account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\":\"user@email.com\",\r\n    \"password\":\"{{secret_password}}\",\r\n    \"password2\":\"{{secret_password}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								""
+							]
+						},
+						"description": "Creates a new user account by providing a valid **email** and matching **passwords**. If the email is not already registered, a new account is created successfully. On success, the response includes both an **access token** (valid for 5 hours) and a **refresh token** (valid for 1 day), which can be used for authenticated requests. Ommiting any of the fields will return a 400 Bad Request."
+					},
+					"response": [
+						{
+							"name": "successful account creation",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\":\"cephasmc3.17@gmail.com\",\r\n    \"password\":\"•••••••\",\r\n    \"password2\":\"•••••••\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										""
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 13:34:26 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "469"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, POST, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "b04fdd1c-8ace-49cd"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98532368b824932d-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"email\": \"cephasmc317@gmail.com\",\n    \"tokens\": {\n        \"refresh\": \"valid_refresh_token\",\n        \"access\": \"valid_access_token\"\n    }\n}"
+						},
+						{
+							"name": "bad_request_no_data",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										""
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 13:28:16 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "61"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, POST, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "35abb08e-6d32-44e8"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98531a79ef33033b-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"email\": [\n        \"This field is required.\"\n    ],\n    \"password\": [\n        \"This field is required.\"\n    ],\n    \"password2\": [\n        \"This field is required.\"\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Users List",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								""
+							]
+						},
+						"description": "Retrieves user account information. Access depends on the role of the requester:\n\n- **Superusers or staff with elevated privileges** can view the full list of registered users on the platform.\n    \n- **Authenticated regular users** can only retrieve their own account details.\n    \n- **Anonymous (unauthenticated) requests** are denied access and will receive an error.\n    \n\nThis endpoint is protected and requires a valid JWT access token."
+					},
+					"response": [
+						{
+							"name": "anonymous user list view",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										""
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:13:30 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "56"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, POST, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "23ae38d1-ced0-4341"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "www-authenticate",
+									"value": "Bearer realm=\"api\""
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98540bd0cd30932a-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"detail\": \"Authentication credentials were not provided.\"\n}"
+						},
+						{
+							"name": "superuser list view",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:15:03 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "244"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, POST, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "0f84763d-4cad-4aa0"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98540eb62ee9033c-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"count\": 2,\n    \"next\": null,\n    \"previous\": null,\n    \"results\": [\n        {\n            \"user_id\": \"57f49221-aeaa-4444-a084\",\n            \"email\": \"cephastay137@gmail.com\",\n            \"fullname\": \"Cephas Tay\",\n            \"url\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/users/57f49221-aeaa-4444-a084/\"\n        },\n        {\n            \"user_id\": \"a0ba6a20-05a5-4cad\",\n            \"email\": \"cephasmc317@gmail.com\",\n            \"fullname\": \"None None\",\n            \"url\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/users/a0ba6a20-05a5-4cad/\"\n        }\n    ]\n}"
+						},
+						{
+							"name": "regular user list view",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:15:52 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "187"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, POST, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "039ba50a-e18c-4362"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98540ff19cd0033c-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": "{\n    \"count\": 1,\n    \"next\": null,\n    \"previous\": null,\n    \"results\": [\n        {\n            \"user_id\": \"a0ba6a20-05a5-4cad-858f\",\n            \"email\": \"cephasmc317@gmail.com\",\n            \"fullname\": \"None None\",\n            \"url\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/users/a0ba6a20-05a5-4cad-858f/\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Users Detail",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{superuser_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/57f49221-aeaa-4444/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"57f49221-aeaa-4444",
+								""
+							]
+						},
+						"description": "The **User Detail** endpoint returns detailed account information for a specific user, identified by their unique `user_id`. It is a protected endpoint that requires a valid JWT token. Superusers can view details for any account, while regular authenticated users can only view their own. Anonymous requests are denied access."
+					},
+					"response": [
+						{
+							"name": "successful response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/57f49221-aeaa-4444/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"57f49221-aeaa-4444",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 13:46:31 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "128"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, PUT, PATCH, DELETE, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "b6898500-5d89-419b"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985335318d25932e-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"user_id\": \"57f49221-aeaa-4444\",\n    \"first_name\": null,\n    \"last_name\": null,\n    \"email\": \"cephastay137@gmail.com\",\n    \"date_joined\": \"2025-09-26T10:25:39.467889Z\"\n}"
+						},
+						{
+							"name": "user not found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/4444-a084-f1c707/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"4444-a084-f1c707",
+										""
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:20:50 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "27"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, PUT, PATCH, DELETE, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "26d292bc-c803-4860"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9854173adcb3033b-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"detail\": \"Not found.\"\n}"
+						},
+						{
+							"name": "unauthenticated response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/57f49221-aeaa-4444-a084/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"57f49221-aeaa-4444-a084",
+										""
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:21:45 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "56"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, PUT, PATCH, DELETE, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "01dd8178-4fbb-4d92"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "www-authenticate",
+									"value": "Bearer realm=\"api\""
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985418a04ecc033b-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"detail\": \"Authentication credentials were not provided.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Users Detail - Partial Update",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{superuser_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"first_name\":\"Cephas\",\r\n    \"last_name\":\"Tay\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/57f49221-aeaa-4444/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"57f49221-aeaa-4444",
+								""
+							]
+						},
+						"description": "This endpoint allows an authenticated user to update selected fields of their own account using the PATCH method. Supported updates include changing the email, first name, and last name. Each user is restricted to modifying only their own account, while anonymous requests result in a 401 Unauthorized error."
+					},
+					"response": [
+						{
+							"name": "successful partial update",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"first_name\":\"Cephas\",\r\n    \"last_name\":\"Tay\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/57f49221-aeaa-4444/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"57f49221-aeaa-4444",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 13:49:49 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "135"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, PUT, PATCH, DELETE, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "88099ad3-c72c-48a2"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985339ff8f419333-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": "{\n    \"user_id\": \"57f49221-aeaa-4444\",\n    \"first_name\": \"Cephas\",\n    \"last_name\": \"Tay\",\n    \"email\": \"cephastay137@gmail.com\",\n    \"date_joined\": \"2025-09-26T10:25:39.467889Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Users Profile - Partial Update",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{superuser_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"profile_picture\": \"string\",\r\n  \"description\": \"string\",\r\n  \"genres\": [\r\n    \"string\"\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/edit_profile/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"edit_profile",
+								""
+							]
+						},
+						"description": "This endpoint lets an authenticated user update personal profile details through a PATCH request. Supported updates include uploading or replacing a profile picture, adding a short bio, and setting favorite genres for personalized movie recommendations. As with other protected endpoints, only the account owner can make changes, and anonymous requests are denied with a 401 Unauthorized error."
+					},
+					"response": [
+						{
+							"name": "bad request - genre setting",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"description\": \"I love horror movies and anime\",\r\n  \"genres\": [\r\n    \"Horror\", \"Anime\"\r\n  ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/edit_profile/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"edit_profile",
+										""
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 13:57:08 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "172"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, PUT, PATCH, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "9fbe0321-fdf7-47c2"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985344bada199336-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"genres\": {\n        \"genres\": \"Invalid genres: Anime. Available genres are: Action, Adventure, Animation, Comedy, Crime, Documentary, Drama, Family, Fantasy, History, Horror, Music, Mystery, Romance, Science Fiction, TV Movie, Thriller, War, Western\"\n    }\n}"
+						},
+						{
+							"name": "successful profile update",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"description\": \"I love horror movies and anime\",\r\n  \"genres\": [\r\n    \"Horror\", \"Animation\"\r\n  ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/edit_profile/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"edit_profile",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 13:57:52 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "235"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, PUT, PATCH, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "6816473d-7306-4c87"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985345c76c219336-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"user\": {\n        \"user_id\": \"a0ba6a20-05a5-4cad\",\n        \"email\": \"cephasmc317@gmail.com\",\n        \"fullname\": \"None None\",\n        \"url\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/users/a0ba6a20-05a5-4cad/\"\n    },\n    \"profile_picture\": null,\n    \"description\": \"I love horror movies and anime\",\n    \"favorite_genres_display\": [\n        \"Animation\",\n        \"Horror\"\n    ]\n}"
+						},
+						{
+							"name": "unauthorized response",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"description\": \"I love horror movies and anime\",\r\n  \"genres\": [\r\n    \"Horror\", \"Animation\"\r\n  ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/edit_profile/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"edit_profile",
+										""
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:25:59 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "56"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, PUT, PATCH, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "95c6259b-42d3-44e4"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "www-authenticate",
+									"value": "Bearer realm=\"api\""
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98541ece6bae932d-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": "{\n    \"detail\": \"Authentication credentials were not provided.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Users Movies Recommended",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{superuser_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/recommended_movies/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"recommended_movies",
+								""
+							]
+						},
+						"description": "This endpoint returns a personalized list of movie recommendations for the authenticated user. If the user has set favorite genres in their profile, the results are tailored to those preferences; otherwise, the response defaults to trending movies. Access requires a valid JWT token, and anonymous requests are denied with a 401 Unauthorized error."
+					},
+					"response": [
+						{
+							"name": "recommended movies for user favorite genres",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/recommended_movies/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"recommended_movies",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:32:25 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1330"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "9c5fe2b5-753b-4371"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9854282a6beb932a-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"count\": 19,\n    \"next\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/users/recommended_movies/?page=2\",\n    \"previous\": null,\n    \"results\": [\n        {\n            \"movie_id\": 1311031,\n            \"title\": \"Demon Slayer: Kimetsu no Yaiba Infinity Castle\",\n            \"popularity\": 539.9749,\n            \"release_date\": \"2025-07-18\",\n            \"description\": \"The Demon Slayer Corps are drawn into the Infinity Castle, where Tanjiro, Nezuko, and the Hashira face terrifying Upper Rank demons in a desperate fight as the final battle against Muzan Kibutsuji begins.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/sUsVimPdA1l162FvdBIlmKBlWHx.jpg\",\n            \"genres\": [\n                \"Fantasy\",\n                \"Animation\",\n                \"Action\",\n                \"Thriller\"\n            ]\n        },\n        {\n            \"movie_id\": 987400,\n            \"title\": \"Aztec Batman: Clash of Empires\",\n            \"popularity\": 294.1757,\n            \"release_date\": \"2025-09-18\",\n            \"description\": \"In the time of the Aztec empire, tragedy strikes Yohualli Coatl when his father is murdered by Spanish conquistadors. To warn King Moctezuma and his high priest, Yoka, of imminent danger, Yohualli escapes to Tenochtitlán. There, he trains in the temple of the bat god Tzinacan with his mentor, developing equipment and weaponry to confront the Spanish invasion and avenge his father’s death. Along the way, he encounters key figures like the fierce Jaguar Woman and the conquistador Hernán Cortés.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/s0Mlo5w4INp3bUdsJo3RaSSMXWz.jpg\",\n            \"genres\": [\n                \"Adventure\",\n                \"Fantasy\",\n                \"Animation\",\n                \"Action\"\n            ]\n        },\n        {\n            \"movie_id\": 1038392,\n            \"title\": \"The Conjuring: Last Rites\",\n            \"popularity\": 249.8959,\n            \"release_date\": \"2025-09-03\",\n            \"description\": \"Paranormal investigators Ed and Lorraine Warren take on one last terrifying case involving mysterious entities they must confront.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/7JzOmJ1fIU43I3gLHYsY8UzNzjG.jpg\",\n            \"genres\": [\n                \"Horror\"\n            ]\n        },\n        {\n            \"movie_id\": 1078605,\n            \"title\": \"Weapons\",\n            \"popularity\": 207.7571,\n            \"release_date\": \"2025-08-04\",\n            \"description\": \"When all but one child from the same class mysteriously vanish on the same night at exactly the same time, a community is left questioning who or what is behind their disappearance.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/cpf7vsRZ0MYRQcnLWteD5jK9ymT.jpg\",\n            \"genres\": [\n                \"Horror\",\n                \"Mystery\"\n            ]\n        },\n        {\n            \"movie_id\": 914215,\n            \"title\": \"Humane\",\n            \"popularity\": 131.828,\n            \"release_date\": \"2024-04-26\",\n            \"description\": \"In the wake of an environmental collapse that has forced humanity to shed 20% of its population, a family dinner erupts into chaos when a father's plan to enlist in the government's new euthanasia program goes horribly awry.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/ecOvKaoM1hwQbp0uTnULGrSV32e.jpg\",\n            \"genres\": [\n                \"Horror\",\n                \"Thriller\",\n                \"Science Fiction\"\n            ]\n        }\n    ],\n    \"message\": \"Personalized recommendations based on your favorite genres.\"\n}"
+						},
+						{
+							"name": "user without genres recommended movies",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/recommended_movies/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"recommended_movies",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:33:32 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1452"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "2ce0fa17-aa0a-40b0"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985429cc2ffc7f07-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"count\": 60,\n    \"next\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/users/recommended_movies/?page=2\",\n    \"previous\": null,\n    \"results\": [\n        {\n            \"movie_id\": 617126,\n            \"title\": \"The Fantastic 4: First Steps\",\n            \"popularity\": 642.9939,\n            \"release_date\": \"2025-07-22\",\n            \"description\": \"Against the vibrant backdrop of a 1960s-inspired, retro-futuristic world, Marvel's First Family is forced to balance their roles as heroes with the strength of their family bond, while defending Earth from a ravenous space god called Galactus and his enigmatic Herald, Silver Surfer.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/x26MtUlwtWD26d0G0FXcppxCJio.jpg\",\n            \"genres\": [\n                \"Adventure\",\n                \"Science Fiction\"\n            ]\n        },\n        {\n            \"movie_id\": 1311031,\n            \"title\": \"Demon Slayer: Kimetsu no Yaiba Infinity Castle\",\n            \"popularity\": 539.9749,\n            \"release_date\": \"2025-07-18\",\n            \"description\": \"The Demon Slayer Corps are drawn into the Infinity Castle, where Tanjiro, Nezuko, and the Hashira face terrifying Upper Rank demons in a desperate fight as the final battle against Muzan Kibutsuji begins.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/sUsVimPdA1l162FvdBIlmKBlWHx.jpg\",\n            \"genres\": [\n                \"Fantasy\",\n                \"Animation\",\n                \"Action\",\n                \"Thriller\"\n            ]\n        },\n        {\n            \"movie_id\": 755898,\n            \"title\": \"War of the Worlds\",\n            \"popularity\": 424.4831,\n            \"release_date\": \"2025-07-29\",\n            \"description\": \"Will Radford is a top analyst for Homeland Security who tracks potential threats through a mass surveillance program, until one day an attack by an unknown entity leads him to question whether the government is hiding something from him... and from the rest of the world.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/yvirUYrva23IudARHn3mMGVxWqM.jpg\",\n            \"genres\": [\n                \"Thriller\",\n                \"Science Fiction\"\n            ]\n        },\n        {\n            \"movie_id\": 987400,\n            \"title\": \"Aztec Batman: Clash of Empires\",\n            \"popularity\": 294.1757,\n            \"release_date\": \"2025-09-18\",\n            \"description\": \"In the time of the Aztec empire, tragedy strikes Yohualli Coatl when his father is murdered by Spanish conquistadors. To warn King Moctezuma and his high priest, Yoka, of imminent danger, Yohualli escapes to Tenochtitlán. There, he trains in the temple of the bat god Tzinacan with his mentor, developing equipment and weaponry to confront the Spanish invasion and avenge his father’s death. Along the way, he encounters key figures like the fierce Jaguar Woman and the conquistador Hernán Cortés.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/s0Mlo5w4INp3bUdsJo3RaSSMXWz.jpg\",\n            \"genres\": [\n                \"Adventure\",\n                \"Fantasy\",\n                \"Animation\",\n                \"Action\"\n            ]\n        },\n        {\n            \"movie_id\": 1038392,\n            \"title\": \"The Conjuring: Last Rites\",\n            \"popularity\": 249.8959,\n            \"release_date\": \"2025-09-03\",\n            \"description\": \"Paranormal investigators Ed and Lorraine Warren take on one last terrifying case involving mysterious entities they must confront.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/7JzOmJ1fIU43I3gLHYsY8UzNzjG.jpg\",\n            \"genres\": [\n                \"Horror\"\n            ]\n        }\n    ],\n    \"message\": \"Showing trending movies. Add favorite genres to get personalized recommendations.\"\n}"
+						},
+						{
+							"name": "unauthenticated user",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/recommended_movies/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"recommended_movies",
+										""
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:34:19 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "56"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "ea5d7c57-a4a4-4452"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "www-authenticate",
+									"value": "Bearer realm=\"api\""
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98542b068af97f07-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"detail\": \"Authentication credentials were not provided.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Users Movies Catalogue",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{superuser_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/view_catalogue/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"view_catalogue",
+								""
+							]
+						},
+						"description": "This endpoint retrieves the authenticated user’s personal movie catalogue, containing all the movies they have marked as favourites. It serves as the central feature of the API, enabling users to view and manage their curated list of saved movies. Access requires a valid JWT token; anonymous users are denied with a 401 Unauthorized error. The response is returned in JSON format and may be paginated for large collections."
+					},
+					"response": [
+						{
+							"name": "user with favourite movies",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/view_catalogue/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"view_catalogue",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:37:07 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "511"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "f10f7707-e047-41ee"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Authorization, Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98542f112b3b932e-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"id\": 1,\n        \"movie_id\": 1038392,\n        \"title\": \"The Conjuring: Last Rites\",\n        \"description\": \"Paranormal investigators Ed and Lorraine Warren take on one last terrifying case involving mysterious entities they must confront.\",\n        \"release_date\": \"2025-09-03\",\n        \"poster_url\": \"https://image.tmdb.org/t/p/w500/7JzOmJ1fIU43I3gLHYsY8UzNzjG.jpg\",\n        \"genres\": [\n            \"Horror\"\n        ],\n        \"date_favorited\": \"2025-09-26T15:30:05.689439Z\"\n    },\n    {\n        \"id\": 2,\n        \"movie_id\": 1031182,\n        \"title\": \"Christmas in Wolf Creek\",\n        \"description\": \"A woman and her new boyfriend are struggling to maintain their relationship. However, when a runaway reindeer threatens the annual Christmas play, the couple must work together to save Christmas for the town and each other.\",\n        \"release_date\": \"2022-12-04\",\n        \"poster_url\": \"https://image.tmdb.org/t/p/w500/z811r69yppFKu4DkzHxJM2YiCxW.jpg\",\n        \"genres\": [\n            \"Drama\",\n            \"Comedy\",\n            \"Romance\",\n            \"TV Movie\"\n        ],\n        \"date_favorited\": \"2025-09-26T15:30:52.609857Z\"\n    }\n]"
+						},
+						{
+							"name": "user with no favorites",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/view_catalogue/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"view_catalogue",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:38:03 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "75"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "f0bf317a-424e-41c7"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Authorization, Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98543075ef86932e-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Browse and add movies to your favorites. Your catalogue is currently empty\"\n}"
+						},
+						{
+							"name": "unauthorized user",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/view_catalogue/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"view_catalogue",
+										""
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:38:38 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "56"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "acdd80d7-ec4f-493f"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "www-authenticate",
+									"value": "Bearer realm=\"api\""
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985431528c3c932e-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"detail\": \"Authentication credentials were not provided.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Users Password Reset",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\":\"providevalid@email.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/password_reset/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"password_reset",
+								""
+							]
+						},
+						"description": "This endpoint is reserved for password reset functionality. It accepts a user’s registered email and is intended to generate a reset token and UID, which will later be delivered via email. However, this feature is not yet fully implemented and is currently non-functional. Please do not rely on it for password recovery until email delivery and link handling are completed in a future release."
+					},
+					"response": [
+						{
+							"name": "user requests for password change token",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\":\"cephasmc317@gmail.covam\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/password_reset/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"password_reset",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:51:13 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "58"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "POST, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "37ad9dd7-9f8e-4b64"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985443bb5d420338-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Check your email for reset token and valid uid\"\n}"
+						},
+						{
+							"name": "invalid user email",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\":\"notauser.17@gmail.com\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/password_reset/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"password_reset",
+										""
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:53:33 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "38"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "POST, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "f708b610-7fcd-49c4"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9854472afd8d9339-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": \"Sorry, user not found!\"\n}"
+						},
+						{
+							"name": "invalid email address",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\":\"notauser.17@notavaliddomaincom\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/password_reset/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"password_reset",
+										""
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:54:47 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "46"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "POST, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "b97e66d2-30b0-4e2e"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985448ff2d799339-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"email\": [\n        \"Enter a valid email address.\"\n    ]\n}"
+						}
+					]
+				}
+			],
+			"description": "The `/users` folder contains all endpoints related to user account and profile management. It allows for full control over a user’s profile, authentication, and interactions with movies. This includes creating and updating accounts, changing passwords, viewing and managing favorite movies, and accessing personalized recommendations. These endpoints are essential for implementing a secure and user-focused application experience."
+		},
+		{
+			"name": "Movies",
+			"item": [
+				{
+					"name": "Movies Save Favorite",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/30231/favorite_movie/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"movies",
+								"30231",
+								"favorite_movie",
+								""
+							]
+						},
+						"description": "This endpoint allows authenticated users to save a specific movie to their favourites catalogue, storing it in the database and linking it to their account. Each request must target a valid movie ID, and on success, the API returns a confirmation message along with the saved movie details. Anonymous requests currently cause validation errors due to missing permission handling, but this will be resolved in an upcoming update."
+					},
+					"response": [
+						{
+							"name": "user saved movie to catalogue",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/1038392/favorite_movie/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"1038392",
+										"favorite_movie",
+										""
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 15:30:07 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "315"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "POST, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "f22d221f-20f3-448b"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9853cce2e88d9345-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Movie Added to favorites\",\n    \"data\": {\n        \"id\": 1,\n        \"movie_id\": 1038392,\n        \"title\": \"The Conjuring: Last Rites\",\n        \"description\": \"Paranormal investigators Ed and Lorraine Warren take on one last terrifying case involving mysterious entities they must confront.\",\n        \"release_date\": \"2025-09-03\",\n        \"poster_url\": \"https://image.tmdb.org/t/p/w500/7JzOmJ1fIU43I3gLHYsY8UzNzjG.jpg\",\n        \"genres\": [\n            \"Horror\"\n        ],\n        \"date_favorited\": \"2025-09-26T15:30:05.689439Z\"\n    }\n}"
+						},
+						{
+							"name": "invalid movie id",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/3023132/favorite_movie/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"3023132",
+										"favorite_movie",
+										""
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 17:00:17 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "58"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "POST, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "71f43c1b-075c-4eb5"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985450ffef80932d-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"movie_id\": [\n        \"Could not find movie with id 3023132.\"\n    ]\n}"
+						},
+						{
+							"name": "unauthenticated user gone wrong",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/30231/favorite_movie/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"30231",
+										"favorite_movie",
+										""
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "html",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 17:01:10 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "text/html",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "85"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "3329c40b-dc60-4928"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985452589d58932d-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "\n<!doctype html><html lang=\"en\"><head><title>Server Error (500)</title></head><body><h1>Server Error (500)</h1><p></p></body></html>\n"
+						}
+					]
+				},
+				{
+					"name": "Movies Trending",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"movies",
+								""
+							]
+						},
+						"description": "This endpoint returns the current list of trending movies ranked by popularity score. Results are paginated, with 60 movies available in total and 5 returned per page. To optimize performance, responses are cached so that repeated requests return quickly without re-fetching data from the external API."
+					},
+					"response": [
+						{
+							"name": "page 1",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/?page=12",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										""
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "12"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 17:06:07 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1396"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, OPTIONS"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "max-age=3600"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "expires",
+									"value": "Fri, 26 Sep 2025 18:06:07 GMT"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "01118793-796b-42db"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98545991ef409340-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"count\": 60,\n    \"next\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/?page=2\",\n    \"previous\": null,\n    \"results\": [\n        {\n            \"movie_id\": 617126,\n            \"title\": \"The Fantastic 4: First Steps\",\n            \"popularity\": 642.9939,\n            \"release_date\": \"2025-07-22\",\n            \"description\": \"Against the vibrant backdrop of a 1960s-inspired, retro-futuristic world, Marvel's First Family is forced to balance their roles as heroes with the strength of their family bond, while defending Earth from a ravenous space god called Galactus and his enigmatic Herald, Silver Surfer.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/x26MtUlwtWD26d0G0FXcppxCJio.jpg\",\n            \"genres\": [\n                \"Adventure\",\n                \"Science Fiction\"\n            ]\n        },\n        {\n            \"movie_id\": 1311031,\n            \"title\": \"Demon Slayer: Kimetsu no Yaiba Infinity Castle\",\n            \"popularity\": 539.9749,\n            \"release_date\": \"2025-07-18\",\n            \"description\": \"The Demon Slayer Corps are drawn into the Infinity Castle, where Tanjiro, Nezuko, and the Hashira face terrifying Upper Rank demons in a desperate fight as the final battle against Muzan Kibutsuji begins.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/sUsVimPdA1l162FvdBIlmKBlWHx.jpg\",\n            \"genres\": [\n                \"Fantasy\",\n                \"Animation\",\n                \"Action\",\n                \"Thriller\"\n            ]\n        },\n        {\n            \"movie_id\": 755898,\n            \"title\": \"War of the Worlds\",\n            \"popularity\": 424.4831,\n            \"release_date\": \"2025-07-29\",\n            \"description\": \"Will Radford is a top analyst for Homeland Security who tracks potential threats through a mass surveillance program, until one day an attack by an unknown entity leads him to question whether the government is hiding something from him... and from the rest of the world.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/yvirUYrva23IudARHn3mMGVxWqM.jpg\",\n            \"genres\": [\n                \"Thriller\",\n                \"Science Fiction\"\n            ]\n        },\n        {\n            \"movie_id\": 987400,\n            \"title\": \"Aztec Batman: Clash of Empires\",\n            \"popularity\": 294.1757,\n            \"release_date\": \"2025-09-18\",\n            \"description\": \"In the time of the Aztec empire, tragedy strikes Yohualli Coatl when his father is murdered by Spanish conquistadors. To warn King Moctezuma and his high priest, Yoka, of imminent danger, Yohualli escapes to Tenochtitlán. There, he trains in the temple of the bat god Tzinacan with his mentor, developing equipment and weaponry to confront the Spanish invasion and avenge his father’s death. Along the way, he encounters key figures like the fierce Jaguar Woman and the conquistador Hernán Cortés.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/s0Mlo5w4INp3bUdsJo3RaSSMXWz.jpg\",\n            \"genres\": [\n                \"Adventure\",\n                \"Fantasy\",\n                \"Animation\",\n                \"Action\"\n            ]\n        },\n        {\n            \"movie_id\": 1038392,\n            \"title\": \"The Conjuring: Last Rites\",\n            \"popularity\": 249.8959,\n            \"release_date\": \"2025-09-03\",\n            \"description\": \"Paranormal investigators Ed and Lorraine Warren take on one last terrifying case involving mysterious entities they must confront.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/7JzOmJ1fIU43I3gLHYsY8UzNzjG.jpg\",\n            \"genres\": [\n                \"Horror\"\n            ]\n        }\n    ]\n}"
+						},
+						{
+							"name": "page 12",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/?page=12",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										""
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "12"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 17:07:26 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1440"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Age",
+									"value": "14"
+								},
+								{
+									"key": "allow",
+									"value": "GET, OPTIONS"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "max-age=3600"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "expires",
+									"value": "Fri, 26 Sep 2025 18:07:11 GMT"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "81fd17b6-161b-4765"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98545b851aa9932e-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"count\": 60,\n    \"next\": null,\n    \"previous\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/?page=11\",\n    \"results\": [\n        {\n            \"movie_id\": 1403735,\n            \"title\": \"Laila\",\n            \"popularity\": 53.729,\n            \"release_date\": \"2025-02-14\",\n            \"description\": \"Sonu Model, a renowned beautician from the old city, is forced to disguise himself as Laila, leading to a series of comedic, romantic, and action-packed events. Chaos ensues in this hilarious laugh riot\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/l4gsNxFPGpzbq0D6QK1a8vO1lBz.jpg\",\n            \"genres\": [\n                \"Comedy\",\n                \"Romance\"\n            ]\n        },\n        {\n            \"movie_id\": 1125257,\n            \"title\": \"Freakier Friday\",\n            \"popularity\": 48.538,\n            \"release_date\": \"2025-08-06\",\n            \"description\": \"Years after Tess and Anna endured an identity crisis, Anna now has a daughter of her own and a soon-to-be stepdaughter. As they navigate the myriad challenges that come when two families merge, Tess and Anna discover lightning might indeed strike twice.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/9wV65OmsjLAqBfDnYTkMPutXH8j.jpg\",\n            \"genres\": [\n                \"Fantasy\",\n                \"Comedy\",\n                \"Family\"\n            ]\n        },\n        {\n            \"movie_id\": 1083433,\n            \"title\": \"I Know What You Did Last Summer\",\n            \"popularity\": 50.2409,\n            \"release_date\": \"2025-07-16\",\n            \"description\": \"When five friends inadvertently cause a deadly car accident, they cover up their involvement and make a pact to keep it a secret rather than face the consequences. A year later, their past comes back to haunt them and they're forced to confront a horrifying truth: someone knows what they did last summer…and is hell-bent on revenge.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/6BfZLQYj97NO1yD5JkSAf5vWzGj.jpg\",\n            \"genres\": [\n                \"Horror\",\n                \"Thriller\",\n                \"Mystery\"\n            ]\n        },\n        {\n            \"movie_id\": 41264,\n            \"title\": \"Africa Blood and Guts\",\n            \"popularity\": 49.4076,\n            \"release_date\": \"1966-02-11\",\n            \"description\": \"A chronicle of the violence that occurred in much of the African continent throughout the 1960s. As many African countries were transitioning from colonial rule to other forms of government, violent political upheavals were frequent. Revolutions in Zanzibar and Kenya in which thousands were killed are shown, the violence not only political; there is also extensive footage of hunters and poachers slaughtering different types of wild animals.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/fPLzCid2gk7eOCrYlXIBU24bTpO.jpg\",\n            \"genres\": [\n                \"Horror\",\n                \"Documentary\"\n            ]\n        },\n        {\n            \"movie_id\": 228854,\n            \"title\": \"Star Virgin\",\n            \"popularity\": 54.1358,\n            \"release_date\": \"1988-06-05\",\n            \"description\": \"Eiko is an alien girl with a unique superpower. She wears an amulet that can sense when men are attracted to her. Using this amulet she can transform into a superhero, Star Virgin, and use her super powers to protect herself. Originally coming to earth to sightsee, Eiko has to save the world from killer robots and protect her nerdy companion.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/idSnr7oBF1wg7z56ToGdu6Fbd76.jpg\",\n            \"genres\": [\n                \"Action\",\n                \"Comedy\",\n                \"Science Fiction\"\n            ]\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Remove FavoriteMovie",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/1031182/remove_favorite/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"movies",
+								"1031182",
+								"remove_favorite",
+								""
+							]
+						},
+						"description": "This endpoint removes a movie from the authenticated user’s catalogue if it exists. A valid JWT token is required. On success, the API responds with 204 No Content. If the specified movie is not in the user’s catalogue, the API responds with 404 Not Found. Unauthorized requests return 401 Unauthorized."
+					},
+					"response": [
+						{
+							"name": "successful deletion",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/1031182/remove_favorite/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"1031182",
+										"remove_favorite",
+										""
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 15:36:33 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "DELETE, OPTIONS"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "a9a3e9c2-fe6e-4c17"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9853d657adf79340-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "movie not found in user's catalogue",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/301232/remove_favorite/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"301232",
+										"remove_favorite",
+										""
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 17:13:24 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "51"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "DELETE, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "834a233d-0709-4ce0"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9854643a9acb9346-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"detail\": \"Movie not found in your catalogue.\"\n}"
+						},
+						{
+							"name": "unauthorized user response",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/301232/remove_favorite/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"301232",
+										"remove_favorite",
+										""
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "html",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 17:33:25 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "text/html",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "85"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "79917eac-a311-4a60"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98548191dacd933a-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "\n<!doctype html><html lang=\"en\"><head><title>Server Error (500)</title></head><body><h1>Server Error (500)</h1><p></p></body></html>\n"
+						},
+						{
+							"name": "user with favourite movies before deletion",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/view_catalogue/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"view_catalogue",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 16:37:07 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "511"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "f10f7707-e047-41ee"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Authorization, Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98542f112b3b932e-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"id\": 1,\n        \"movie_id\": 1038392,\n        \"title\": \"The Conjuring: Last Rites\",\n        \"description\": \"Paranormal investigators Ed and Lorraine Warren take on one last terrifying case involving mysterious entities they must confront.\",\n        \"release_date\": \"2025-09-03\",\n        \"poster_url\": \"https://image.tmdb.org/t/p/w500/7JzOmJ1fIU43I3gLHYsY8UzNzjG.jpg\",\n        \"genres\": [\n            \"Horror\"\n        ],\n        \"date_favorited\": \"2025-09-26T15:30:05.689439Z\"\n    },\n    {\n        \"id\": 2,\n        \"movie_id\": 1031182,\n        \"title\": \"Christmas in Wolf Creek\",\n        \"description\": \"A woman and her new boyfriend are struggling to maintain their relationship. However, when a runaway reindeer threatens the annual Christmas play, the couple must work together to save Christmas for the town and each other.\",\n        \"release_date\": \"2022-12-04\",\n        \"poster_url\": \"https://image.tmdb.org/t/p/w500/z811r69yppFKu4DkzHxJM2YiCxW.jpg\",\n        \"genres\": [\n            \"Drama\",\n            \"Comedy\",\n            \"Romance\",\n            \"TV Movie\"\n        ],\n        \"date_favorited\": \"2025-09-26T15:30:52.609857Z\"\n    }\n]"
+						},
+						{
+							"name": "new catalogue after removing",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/users/view_catalogue/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"users",
+										"view_catalogue",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 17:36:51 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "291"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, HEAD, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "36877c5f-ab1a-497a"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Authorization, Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9854869388839345-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"id\": 1,\n        \"movie_id\": 1038392,\n        \"title\": \"The Conjuring: Last Rites\",\n        \"description\": \"Paranormal investigators Ed and Lorraine Warren take on one last terrifying case involving mysterious entities they must confront.\",\n        \"release_date\": \"2025-09-03\",\n        \"poster_url\": \"https://image.tmdb.org/t/p/w500/7JzOmJ1fIU43I3gLHYsY8UzNzjG.jpg\",\n        \"genres\": [\n            \"Horror\"\n        ],\n        \"date_favorited\": \"2025-09-26T15:30:05.689439Z\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "Movies Detial",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/1038392/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"movies",
+								"1038392",
+								""
+							]
+						},
+						"description": "This endpoint retrieves the details of a single movie by its unique ID. It is publicly accessible and does not require authentication. On success, the API responds with 200 OK and the full movie object. If the movie ID does not exist or cannot be found, the API responds with 404 Not Found."
+					},
+					"response": [
+						{
+							"name": "success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/1038392/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"1038392",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 14:15:39 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "270"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Age",
+									"value": "9"
+								},
+								{
+									"key": "allow",
+									"value": "OPTIONS, GET"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "max-age=3600"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "expires",
+									"value": "Fri, 26 Sep 2025 15:15:30 GMT"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "92c07a0e-21ab-469f"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98535fe7cffc9345-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": "{\n    \"movie_id\": 1038392,\n    \"title\": \"The Conjuring: Last Rites\",\n    \"popularity\": 249.8959,\n    \"release_date\": \"2025-09-03\",\n    \"description\": \"Paranormal investigators Ed and Lorraine Warren take on one last terrifying case involving mysterious entities they must confront.\",\n    \"poster_url\": \"https://image.tmdb.org/t/p/w500/7JzOmJ1fIU43I3gLHYsY8UzNzjG.jpg\",\n    \"genres\": [\n        \"Horror\"\n    ]\n}"
+						},
+						{
+							"name": "movie not found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/103839209/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"103839209",
+										""
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 17:41:14 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "39"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "OPTIONS, GET"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "c5419cc5-1f04-434e"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98548d01cf339340-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"detail\": \"Sorry, movie not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Movies Search",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/search/?q=Superman",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"movies",
+								"search",
+								""
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "Superman"
+								}
+							]
+						},
+						"description": "This endpoint allows users to search for movies by providing a keyword in the query parameter `q`. The search matches against movie titles and returns a paginated list of results in JSON format. Authentication is not required. On success, the API responds with **200 OK**; if no results match the query, an empty list is returned."
+					},
+					"response": [
+						{
+							"name": "success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/search/?q=superman",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"search",
+										""
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "superman"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 14:18:22 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1243"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Age",
+									"value": "4"
+								},
+								{
+									"key": "allow",
+									"value": "OPTIONS, GET"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "max-age=3600"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "expires",
+									"value": "Fri, 26 Sep 2025 15:18:17 GMT"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "b26106ce-0633-4e52"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "985363dd6841932d-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": "{\n    \"count\": 20,\n    \"next\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/search/?page=2&q=superman\",\n    \"previous\": null,\n    \"results\": [\n        {\n            \"movie_id\": 1061474,\n            \"title\": \"Superman\",\n            \"popularity\": 196.7834,\n            \"release_date\": \"2025-07-09\",\n            \"description\": \"Superman, a journalist in Metropolis, embarks on a journey to reconcile his Kryptonian heritage with his human upbringing as Clark Kent.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/wPLysNDLffQLOVebZQCbXJEv6E6.jpg\",\n            \"genres\": [\n                \"Adventure\",\n                \"Action\",\n                \"Science Fiction\"\n            ]\n        },\n        {\n            \"movie_id\": 1924,\n            \"title\": \"Superman\",\n            \"popularity\": 7.5203,\n            \"release_date\": \"1978-12-14\",\n            \"description\": \"Mild-mannered Clark Kent works as a reporter at the Daily Planet alongside his crush, Lois Lane. Clark must summon his superhero alter-ego when the nefarious Lex Luthor launches a plan to take over the world.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/d7px1FQxW4tngdACVRsCSaZq0Xl.jpg\",\n            \"genres\": [\n                \"Adventure\",\n                \"Action\",\n                \"Science Fiction\"\n            ]\n        },\n        {\n            \"movie_id\": 167595,\n            \"title\": \"Superman\",\n            \"popularity\": 3.3789,\n            \"release_date\": \"1987-12-31\",\n            \"description\": \"In this Indian take on the classic superhero story, a young baby from the doomed planet Krypton is sent to Earth, where he is adopted by an elderly couple in India who name him Shekhar. After growing to an adult and learning about his origins and powers, he goes to the city in search of his school sweetheart, Gita, who has become a newpaper reporter. At the same time, Verma, Shekhar's rival for Gita's affection in their school days, has gone on to become a crime lord and general super-villain. Verma has hatched at plan to become rich by devastating part of India with natural disasters, then buying up all of the abandoned land. Will Superman/Shekhar be able to put a stop to Verma's evil plan? Will he win Gita's heart? Will he keep his double identity a secret?\",\n            \"poster_url\": null,\n            \"genres\": [\n                \"Adventure\",\n                \"Action\",\n                \"Science Fiction\"\n            ]\n        },\n        {\n            \"movie_id\": 95414,\n            \"title\": \"Superman\",\n            \"popularity\": 1.8843,\n            \"release_date\": \"1941-09-26\",\n            \"description\": \"After The Daily Planet receives a letter from a mad scientist threatening to wreak destruction with his Electrothanasia Ray, Lois Lane heads out in the hopes of getting more information for a news story.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/4DK6wWZTp6v32NUXszkHOPGxm16.jpg\",\n            \"genres\": [\n                \"Adventure\",\n                \"Fantasy\",\n                \"Animation\",\n                \"Action\",\n                \"Science Fiction\",\n                \"Family\"\n            ]\n        },\n        {\n            \"movie_id\": 558077,\n            \"title\": \"Superman\",\n            \"popularity\": 0.1603,\n            \"release_date\": \"1990-01-01\",\n            \"description\": \"A child from a dying world is sent to Earth, where his alien physiology renders him superhuman. Bengali remake of the 1978 classic.\",\n            \"poster_url\": \"https://image.tmdb.org/t/p/w500/deA1k1ZnenD9zdm2deoXgbnZo7n.jpg\",\n            \"genres\": [\n                \"Action\"\n            ]\n        }\n    ]\n}"
+						},
+						{
+							"name": "no query param",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/search/?q=",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"search",
+										""
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": ""
+										}
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 14:20:36 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "42"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "OPTIONS, GET"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "c4d84804-81a5-41c3"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "98536722db0d932e-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": "{\n    \"error\": \"Query parameter 'q' is required\"\n}"
+						},
+						{
+							"name": "movie not found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/movies/search/?q=87n",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"movies",
+										"search",
+										""
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "87n"
+										}
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 14:21:29 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "38"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "OPTIONS, GET"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "d40c83b2-238b-4c62"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9853686eae20932e-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Movie: 87n Not found\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Genres List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/genres/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"genres",
+								""
+							]
+						},
+						"description": "This endpoint returns the list of all available movie genres that users can select from when setting preferences or filtering recommendations. It is publicly accessible and does not require authentication. The response is returned in JSON format with each genre represented by its unique ID and name. A successful request returns 200 OK."
+					},
+					"response": [
+						{
+							"name": "success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/genres/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"genres",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 15:42:31 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "162"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "GET, OPTIONS"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "max-age=3600"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "expires",
+									"value": "Fri, 26 Sep 2025 16:42:31 GMT"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "13df6448-6c0b-42fd"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9853df174fe19340-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"count\": 19,\n    \"next\": \"https://alx-project-nexus-movie-api.onrender.com/api/v1/genres/?page=2\",\n    \"previous\": null,\n    \"results\": [\n        {\n            \"id\": 28,\n            \"name\": \"Action\"\n        },\n        {\n            \"id\": 12,\n            \"name\": \"Adventure\"\n        },\n        {\n            \"id\": 16,\n            \"name\": \"Animation\"\n        },\n        {\n            \"id\": 35,\n            \"name\": \"Comedy\"\n        },\n        {\n            \"id\": 80,\n            \"name\": \"Crime\"\n        }\n    ]\n}"
+						}
+					]
+				}
+			],
+			"description": "The `/movies` folder contains endpoints for retrieving, searching, and managing movies. This includes trending movies, detailed information about a specific movie, and user interactions like adding or removing movies from a personal favorites list. These endpoints are useful for both public data access and personalized user experiences."
+		},
+		{
+			"name": "Token Endpoints",
+			"item": [
+				{
+					"name": "JWT Token Obtain",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"cephasmc317@gmail.com\",\r\n    \"password\": \"{{secret_password}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/token/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"token",
+								""
+							]
+						},
+						"description": "This endpoint generates a pair of JSON Web Tokens (JWT) — an access token and a refresh token — for an authenticated user. Clients must provide valid login credentials (email and password) in the request body. The access token is used to authenticate subsequent requests, while the refresh token can be used to obtain a new access token when the old one expires. A successful request returns 200 OK with both tokens in the response body."
+					},
+					"response": [
+						{
+							"name": "wrong credentials",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"cephas.mc3.17@gmail.com\",\r\n    \"password\": \"•••••••\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/token/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"token",
+										""
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 15:45:20 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "65"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "POST, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "c97e9ac5-0612-4956"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "www-authenticate",
+									"value": "Bearer realm=\"api\""
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9853e32ac90d9333-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"detail\": \"No active account found with the given credentials\"\n}"
+						},
+						{
+							"name": "success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"cephasmc317@gmail.com\",\r\n    \"password\": \"•••••••\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/token/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"token",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 15:45:52 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"name": "Content-Type",
+									"description": "",
+									"type": "text"
+								},
+								{
+									"key": "Content-Length",
+									"value": "415"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "POST, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "0550f31a-0fe8-426b"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9853e3eeaf599333-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"refresh\": \"valid_refresh_token\",\n    \"access\": \"valid_access_token\"\n}"
+						}
+					]
+				},
+				{
+					"name": "JWT Tokens Refresh",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"refresh\":\"{{user_refresh_token}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/token/refresh/",
+							"protocol": "https",
+							"host": [
+								"alx-project-nexus-movie-api",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"token",
+								"refresh",
+								""
+							]
+						},
+						"description": "This endpoint allows clients to obtain a new access token by submitting a valid refresh token in the request body. It is used when the access token has expired, so the user does not need to log in again. A successful request returns 200 OK with a fresh access token. If the refresh token is invalid or expired, the response will include a 401 Unauthorized error."
+					},
+					"response": [
+						{
+							"name": "success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"refresh\":\"•••••••\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://alx-project-nexus-movie-api.onrender.com/api/v1/token/refresh/",
+									"protocol": "https",
+									"host": [
+										"alx-project-nexus-movie-api",
+										"onrender",
+										"com"
+									],
+									"path": [
+										"api",
+										"v1",
+										"token",
+										"refresh",
+										""
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Date",
+									"value": "Fri, 26 Sep 2025 15:55:22 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Content-Length",
+									"value": "420"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "allow",
+									"value": "POST, OPTIONS"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "cross-origin-opener-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "referrer-policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "rndr-id",
+									"value": "250ffc1b-de30-4aa5"
+								},
+								{
+									"key": "strict-transport-security",
+									"value": "max-age=31536000; includeSubDomains; preload"
+								},
+								{
+									"key": "vary",
+									"value": "Accept, origin"
+								},
+								{
+									"key": "vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "x-content-type-options",
+									"value": "nosniff"
+								},
+								{
+									"key": "x-frame-options",
+									"value": "DENY"
+								},
+								{
+									"key": "x-render-origin-server",
+									"value": "gunicorn"
+								},
+								{
+									"key": "cf-cache-status",
+									"value": "DYNAMIC"
+								},
+								{
+									"key": "Server",
+									"value": "cloudflare"
+								},
+								{
+									"key": "CF-RAY",
+									"value": "9853f1ed3d249333-ACC"
+								},
+								{
+									"key": "alt-svc",
+									"value": "h3=\":443\"; ma=86400"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"access\": \"new_access_token\",\n    \"refresh\": \"valid_refresh_token\"\n}"
+						}
+					]
+				}
+			],
+			"description": "The `/token` folder includes endpoints for JWT-based authentication. Users can obtain access tokens, refresh them, and in some future implementations, retrieve API keys. These endpoints ensure secure access to protected resources while enabling session management for your applications."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://farming-simulator.pstmn.io",
+			"description": "BaseUrl hosting the api"
+		},
+		{
+			"value": ""
+		}
+	]
+}

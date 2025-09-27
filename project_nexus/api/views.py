@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
+from django.urls import get_resolver, reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.decorators import method_decorator
@@ -16,6 +17,7 @@ from drf_spectacular.utils import (
 from rest_framework import permissions, status, viewsets, views
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from api.models import Genre, FavoriteMovie, ServiceAPIKey
 from api.utils import IsUser, StandardPagination, get_or_set_cache
@@ -51,6 +53,55 @@ def serialize_trending_movies():
         context={"image_base_url": "https://image.tmdb.org/t/p/w500"},
     )
     return serializer.data
+
+
+@extend_schema(
+        responses={
+            200: OpenApiResponse(description='Returns a list of all endpoints')
+        }
+)
+@api_view(['GET'])
+def endpoints(request, format=None):
+    """
+    Manual API root listing all endpoints with Swagger/Redoc links.
+    """
+    api_endpoints = {
+        # Movies
+        "Trending Movies": reverse('api:movies-list', request=request, format=format),
+        "Movie Detail": reverse('api:movie-detail', request=request, format=format, kwargs={'movie_id': 1311031}),
+        "Search Movie": reverse('api:search-movie', request=request, format=format),
+        "Favorite a Movie": reverse('api:add-movie-favorite', request=request, format=format, kwargs={'movie_id': 1311031}),
+        "Remove Favorite Movie": reverse('api:remove-favorite-movie', request=request, format=format, kwargs={'movie_id': 1311031}),
+
+        # Genres
+        "List Genres": reverse('api:genre-list', request=request, format=format),
+
+        # Users
+        "List or Register Users": reverse('api:users-list', request=request, format=format),
+        "User Detail": reverse('api:users-detail', request=request, format=format, kwargs={'user_id': 'valid_uuid'}),
+        "Edit Profile (GET/PUT/PATCH)": reverse('api:users-edit-profile', request=request, format=format),
+        "Change Password": reverse('api:users-password-change', request=request, format=format),
+        "Password Reset": reverse('api:users-password-reset', request=request, format=format),
+        "Recommended Movies": reverse('api:users-recommended-movies', request=request, format=format),
+        "View Catalogue": reverse('api:users-view-catalogue', request=request, format=format),
+
+        # JWT Authentication
+        "Create Token": reverse('api:token_obtain_pair', request=request, format=format),
+        "Refresh Token": reverse('api:token_refresh', request=request, format=format),
+
+        # API Key
+        "Get API Key": reverse('api:get-api-key', request=request, format=format),
+    }
+
+    return Response({
+        "project": "Project Nexus Movie API",
+        "description": "An API providing movie data, search, genre info, and user account management.",
+        "endpoints": api_endpoints,
+        "docs": {
+            "Swagger UI": reverse('swagger-ui', request=request, format=format),
+            "Redoc": reverse('redoc', request=request, format=format),
+        }
+    })
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -171,7 +222,10 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         catalogue = request.user.favorites.all()
         if not catalogue:
-            return Response({"message":"Browse and add movies to your favorites. Your catalogue is currently empty"}, status=status.HTTP_200_OK)
+            return Response({
+                "message":"Browse and add movies to your favorites. "\
+                "Your catalogue is currently empty"}, 
+                status=status.HTTP_200_OK)
         serializer = FavoriteMovieReadSerializer(catalogue, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -379,8 +433,8 @@ def movie_detail(request, movie_id: int):
         400: OpenApiResponse(description="Validation errors"),
     },
 )
-@permission_classes([permissions.IsAuthenticated])
 @api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
 def favorite_movie(request, movie_id: int):
     """
     Add a given movie to the current user's list of favorites.
@@ -412,8 +466,8 @@ def favorite_movie(request, movie_id: int):
         404: OpenApiResponse(description="Movie not found in catalogue"),
     },
 )
-@permission_classes([permissions.IsAuthenticated])
 @api_view(["DELETE"])
+@permission_classes([permissions.IsAuthenticated])
 def remove_favorite(request, movie_id: int):
     """
     Remove a given movie from the user's favorite catalogue.
