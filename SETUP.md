@@ -126,15 +126,15 @@ python manage.py runserver
 Visit the API at:
 
 ```
-http://127.0.0.1:8000/api/v1/
+http://127.0.0.1:8000/
 ```
 
 ---
 
 ## 9. Access API Documentation
 
-* Swagger UI: [http://127.0.0.1:8000/docs/](http://127.0.0.1:8000/docs/)
-* ReDoc: [http://127.0.0.1:8000/redoc/](http://127.0.0.1:8000/redoc/)
+* Swagger UI: [http://127.0.0.1:8000/api/v1/docs/](http://127.0.0.1:8000/api/v1/docs/)
+* ReDoc: [http://127.0.0.1:8000/api/v1/docs/schema/redoc/](http://127.0.0.1:8000/api/v1/docs/schema/redoc/)
 
 ---
 

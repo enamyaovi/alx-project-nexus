@@ -70,6 +70,10 @@ class User(AbstractUser):
         default=True
     )
 
+    email_confirmed = models.BooleanField(
+        default=False
+    )
+
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = []  # No username required

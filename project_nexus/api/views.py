@@ -1,5 +1,8 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 from django.urls import get_resolver, reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -14,29 +17,33 @@ from drf_spectacular.utils import (
     extend_schema,
 )
 
-from rest_framework import permissions, status, viewsets, views
+from rest_framework import permissions, status, viewsets, renderers
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
-from api.models import Genre, FavoriteMovie, ServiceAPIKey
-from api.utils import IsUser, StandardPagination, get_or_set_cache
 
+from api.models import Genre, FavoriteMovie, ServiceAPIKey
 from api.movie_data_redis import get_trending_movies, search_movies_from_tmdb
 from api.movie_data_redis import get_movie_by_id
 
 from api.serializers import (
+    EmailOnlySerializer,
     FavoriteMovieReadSerializer,
     FavoriteMovieWriteSerializer,
     GenreSerializer,
     MovieOutputSerializer,
+    MessageSerializer,
     PasswordChangeSerializer,
-    PasswordResetSerializer,
     RegisterUserSerializer,
     UserDetailSerializer,
     UserLightSerializer,
     UserProfileSerializer,
 )
+
+from api.tasks import send_email_service
+from api.utils import (IsUser, StandardPagination, get_or_set_cache, send_account_activation_email)
 
 
 User = get_user_model()
@@ -57,7 +64,8 @@ def serialize_trending_movies():
 
 @extend_schema(
         responses={
-            200: OpenApiResponse(description='Returns a list of all endpoints')
+            200: OpenApiResponse(description='Returns a list of all endpoints'),
+            500: OpenApiResponse(description='Internal Server Error')
         }
 )
 @api_view(['GET'])
@@ -67,30 +75,59 @@ def endpoints(request, format=None):
     """
     api_endpoints = {
         # Movies
-        "Trending Movies": reverse('api:movies-list', request=request, format=format),
-        "Movie Detail": reverse('api:movie-detail', request=request, format=format, kwargs={'movie_id': 1311031}),
-        "Search Movie": reverse('api:search-movie', request=request, format=format),
-        "Favorite a Movie": reverse('api:add-movie-favorite', request=request, format=format, kwargs={'movie_id': 1311031}),
+        "Trending Movies": reverse(
+            'api:movies-list', request=request, format=format),
+        "Movie Detail": reverse(
+            'api:movie-detail', 
+            request=request, format=format, kwargs={'movie_id': 1311031}),
+        "Search Movie": reverse(
+            'api:search-movie', request=request, format=format),
+        "Favorite a Movie": reverse(
+            'api:add-movie-favorite', 
+            request=request, format=format, kwargs={'movie_id': 1311031}),
         "Remove Favorite Movie": reverse('api:remove-favorite-movie', request=request, format=format, kwargs={'movie_id': 1311031}),
 
         # Genres
-        "List Genres": reverse('api:genre-list', request=request, format=format),
+        "List Genres": reverse(
+            'api:genre-list', request=request, format=format),
 
         # Users
-        "List or Register Users": reverse('api:users-list', request=request, format=format),
-        "User Detail": reverse('api:users-detail', request=request, format=format, kwargs={'user_id': 'valid_uuid'}),
-        "Edit Profile (GET/PUT/PATCH)": reverse('api:users-edit-profile', request=request, format=format),
-        "Change Password": reverse('api:users-password-change', request=request, format=format),
-        "Password Reset": reverse('api:users-password-reset', request=request, format=format),
-        "Recommended Movies": reverse('api:users-recommended-movies', request=request, format=format),
-        "View Catalogue": reverse('api:users-view-catalogue', request=request, format=format),
+        "List or Register Users": reverse(
+            'api:users-list', request=request, format=format),
+        "Account Activation Confirm":reverse(
+            'api:users-activate-account',
+            request=request,
+            format=format, kwargs={'uid':'valid-uid', 'token':'valid-token'}),
+        "Activate Account": reverse(
+            'api:users-resend-activation-email',
+            request=request, format=format),
+        "User Detail": reverse(
+            'api:users-detail',
+            request=request, format=format, kwargs={'user_id': 'valid_uuid'}),
+        "Edit Profile (GET/PUT/PATCH)": reverse(
+            'api:users-edit-profile', request=request, format=format),
+        "Password Change": reverse(
+            'api:users-password-change', request=request, format=format),
+        "Password Reset Confirm": reverse(
+            'api:users-password-reset-confirm',
+            request=request, format=format,
+            kwargs={"token":"valid-token", "uid":"vaild-uid"}),
+        "Password Reset": reverse(
+            'api:users-password-reset', request=request, format=format),
+        "Recommended Movies": reverse(
+            'api:users-recommended-movies', request=request, format=format),
+        "View Catalogue": reverse(
+            'api:users-view-catalogue', request=request, format=format),
 
         # JWT Authentication
-        "Create Token": reverse('api:token_obtain_pair', request=request, format=format),
-        "Refresh Token": reverse('api:token_refresh', request=request, format=format),
+        "Create Token": reverse(
+            'api:token_obtain_pair', request=request, format=format),
+        "Refresh Token": reverse(
+            'api:token_refresh', request=request, format=format),
 
         # API Key
-        "Get API Key": reverse('api:get-api-key', request=request, format=format),
+        "Get API Key": reverse(
+            'api:get-api-key', request=request, format=format),
     }
 
     return Response({
@@ -144,10 +181,12 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserLightSerializer
         if self.action in ["edit_profile", "view_catalogue"]:
             return UserProfileSerializer
-        if self.action == "password_reset":
-            return PasswordResetSerializer
-        if self.action == "password_change":
+        if self.action in ["password_reset", "resend_activation_email"]:
+            return EmailOnlySerializer
+        if self.action in ["password_change", "password_reset_confirm"]:
             return PasswordChangeSerializer
+        if self.action == "activate_account":
+            return MessageSerializer
         return super().get_serializer_class()
 
 
@@ -168,10 +207,15 @@ class UserViewSet(viewsets.ModelViewSet):
         Return the appropriate permission classes based on the action.
         """
         if self.action in [
-            "create", "password_change", "password_reset"]:
+            "create",
+            "password_reset_confirm",
+            "password_reset",
+            "activate_account",
+            "resend_activation_email"
+            ]:
             permission_classes = [permissions.AllowAny]
         elif self.action in [
-            "update", "partial_update", "destroy"]:
+            "update", "partial_update", "destroy", "password_change"]:
             permission_classes = [IsUser]
         else:
             permission_classes = [permissions.IsAuthenticated]
@@ -179,7 +223,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
     @extend_schema(
-        responses={200: UserProfileSerializer},
+        responses={
+            200: UserProfileSerializer(),
+            500: OpenApiResponse(description='Internal Server Error')
+        },
         methods=["GET", "PUT", "PATCH"],
     )
     @action(
@@ -208,7 +255,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
     @extend_schema(
-        responses={200: FavoriteMovieReadSerializer(many=True)},
+        responses={
+            200: FavoriteMovieReadSerializer(many=True),
+            500: OpenApiResponse(description='Internal Server Error')
+            },
     )
     @method_decorator(vary_on_headers("Authorization"))
     @action(
@@ -231,7 +281,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
     @extend_schema(
-        responses={200: MovieOutputSerializer(many=True)},
+        responses={
+            200: MovieOutputSerializer(many=True),
+            500: OpenApiResponse(description='Internal Server Error'),
+            502: OpenApiResponse(description='Bad Gateway')
+
+            },
     )
     @action(
         detail=False,
@@ -281,11 +336,117 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
     @extend_schema(
-        request=PasswordResetSerializer,
+            responses={
+                200: OpenApiResponse(description='Successful Activation'),
+                400: OpenApiResponse(description="Bad Request Malformed or Expired Link"),
+                202: OpenApiResponse(description="Link Valid"),
+                500: OpenApiResponse(description="Internal Server Error")
+            }
+    )
+    @action(
+        detail=False,
+        methods=["GET","POST"],
+        url_path=r'activate_account/(?P<uid>[^/.]+)/(?P<token>[^/.]+)',
+        renderer_classes=[renderers.JSONRenderer]
+        )
+    def activate_account(self, request, token=None, uid=None):
+        """
+        View for processing email and account activation
+        """
+        try:
+            decoded_uid = urlsafe_base64_decode(uid).decode() # type: ignore
+            user = User.objects.get(pk=decoded_uid)
+        except (User.DoesNotExist, ValueError, TypeError):
+            return Response(
+                {"error":"Invalid User"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not default_token_generator.check_token(user, token):
+            return Response(
+                {"error":"Invalid or expired token"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if request.method == "GET":
+            if request.user.is_authenticated and request.user.email_confirmed:
+                return Response(
+                    {
+                        "message":"You have already confirmed your email"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if request.user.is_authenticated and not request.user.email_confirmed:
+                return Response(
+                    {
+                        "message":"Confirm your email by clicking on this link",
+                        "link":reverse('api:users-resend-activation-email')
+                    }
+                )
+            if request.user.is_anonymous:
+                return Response(
+                    {"message":"send a 'POST' request to activate email. Link is valid"},
+                    status=status.HTTP_202_ACCEPTED
+                )
+
+        if request.method == "POST":
+            user.email_confirmed = True  # type: ignore
+            user.save()
+            return Response(
+                {
+                    "message":"Your account has been confirmed. Browse your catalogue here",
+                    "user_catalogue":reverse("api:users-view-catalogue")
+                    
+                },
+                status=status.HTTP_200_OK
+            )
+
+
+    @extend_schema(
+            request=EmailOnlySerializer,
+            responses={
+                200: OpenApiResponse(description='Email Link Sent'),
+                400: OpenApiResponse(description='Bad data'),
+                404: OpenApiResponse(description='Resource not found'),
+                500: OpenApiResponse(description='Internal Server Error')
+            }
+    )
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path='resend_activation_email'
+    )
+    def resend_activation_email(self, request):
+        """
+        Allows users to request a new activation email if they missed the first one.
+        """
+        serializer = EmailOnlySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email'] # type: ignore
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "No user found with that email."}, status=404)
+
+        if user.email_confirmed: # type: ignore
+            return Response({"message": "Your email is already confirmed."}, status=400)
+
+        send_account_activation_email(user)
+
+        return Response(
+            {"message": "A new activation email has been sent."},
+            status=status.HTTP_200_OK
+        )
+
+
+    @extend_schema(
+        request=EmailOnlySerializer,
         responses={
             200: OpenApiResponse(description="Returns token and uid"),
-            404: OpenApiResponse(description="Resource not found"),
+            404: OpenApiResponse(description="User account not found"),
             400: OpenApiResponse(description="Bad request"),
+            500: OpenApiResponse(description='Internal Server Error')
         },
     )
     @action(
@@ -297,12 +458,13 @@ class UserViewSet(viewsets.ModelViewSet):
         Handle password reset request.
 
         Generates a reset token and UID for a given email address.
-
-        Current implementation not safe.
         """
-        serializer = PasswordResetSerializer(data=request.data)
+
+        #validate the input from request
+        serializer = EmailOnlySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        #search for user in the db
         value = serializer.validated_data["email"]  # type: ignore
         try:
             user = User.objects.get(email__iexact=value)
@@ -312,11 +474,33 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        #create token and encode the pk of user
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
-        # TODO, email service for sending emails to user email with token 
-        # make a background task with celery
+        #create password reset link
+        reset_link = reverse(
+            "api:users-password-reset-confirm",
+            request=request,
+            kwargs={
+            'uid':uid,
+            'token':token
+        })
+
+        subject = 'User Account Password Reset'
+        template = render_to_string(
+            'api/password_reset_message.txt',
+            context={
+                'user':user,
+                'password_reset_link': reset_link
+            }
+        )
+
+        send_email_service.delay( # type: ignore
+            email_address=value,
+            subject=subject,
+            message=template
+        )
 
         return Response(
             {"message": "Check your email for reset token and valid uid"},
@@ -327,48 +511,86 @@ class UserViewSet(viewsets.ModelViewSet):
     @extend_schema(
         request=PasswordChangeSerializer,
         responses={
-            204: OpenApiResponse(description="Password reset successful"),
+            200: OpenApiResponse(description="Password reset successful"),
             400: OpenApiResponse(description="Error messages"),
         },
     )
     @action(
         detail=False,
-        methods=["POST"]
+        methods=["GET","POST"],
+        url_path=r'password_change/(?P<uid>[^/.]+)/(?P<token>[^/.]+)',
+        renderer_classes=[renderers.JSONRenderer]
         )
-    def password_change(self, request):
+    def password_reset_confirm(self, request, token=None, uid=None):
         """
         Handle password change request.
 
         Verifies the reset token and updates the user's password.
         """
-        serializer = PasswordChangeSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
-        uid = serializer.validated_data["uid"]  # type: ignore
-        token = serializer.validated_data["token"]  # type: ignore
-        new_password = serializer.validated_data["new_password"]  # type: ignore
-
+        if request.user.is_authenticated:
+            return Response(
+                {
+                    "detail": "You're already logged in. Use the change password endpoint instead.",
+                    "link": reverse('api:users-password-change')},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         try:
-            decoded_uid = urlsafe_base64_decode(uid).decode()
+            decoded_uid = urlsafe_base64_decode(uid).decode() # type: ignore
             user = User.objects.get(pk=decoded_uid)
         except (User.DoesNotExist, ValueError, TypeError):
             return Response(
                 {"error": "Invalid user"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
+        
         if not default_token_generator.check_token(user, token):
             return Response(
                 {"error": "Invalid or expired token."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        
+        if request.method == 'GET':
+            return Response({"detail": "Token is valid, you may proceed with password reset."})
+            
+        if request.method == 'POST':
+            serializer = PasswordChangeSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            new_password = serializer.validated_data["new_password"]  # type: ignore
+            user.set_password(new_password)
+            user.save()
+            return Response(
+                {"message": "Password reset successful."},
+                status=status.HTTP_200_OK,
+            )
 
-        user.set_password(new_password)
+
+    @extend_schema(
+        request=PasswordChangeSerializer,
+        responses={
+            200: OpenApiResponse(description="Reset Successful"),
+            400: OpenApiResponse(description="Bad Request")
+        }
+    )
+    @action(
+        detail=False,
+        methods=["POST"]
+    )
+    def password_change(self, request):
+        """
+        Change the password of a logged in user
+        """
+        serializer = PasswordChangeSerializer(
+            data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        value = serializer.validated_data['new_password'] # type: ignore
+        user = request.user
+        user.set_password(value)
         user.save()
-        return Response(
-            {"message": "Password reset successful."},
-            status=status.HTTP_204_NO_CONTENT,
-        )
+
+        return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
 
 
 @extend_schema(

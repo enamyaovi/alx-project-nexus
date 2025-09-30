@@ -1,0 +1,14 @@
+Hello {{ user.fullname|default:user.email }},
+
+Thank you for signing up with Movie API 🎬
+
+To activate your account and get started, please confirm your email address by clicking the link below:
+
+🔗 {{ email_activation_link }}
+
+This link is valid for 5 hours. If it expires, you can always request a new one.
+
+If you did not create this account, feel free to ignore this message — no further action is needed.
+
+Best regards,  
+The Movie API Team

@@ -36,5 +36,5 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 
     #NOTE: api key for future versions
-    path("token/retrieve_api_key/", views.get_api_key, name='get-api-key')
+    path("token/retrieve_api_key/", views.get_api_key, name='get-api-key'),
 ]

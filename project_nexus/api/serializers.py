@@ -80,6 +80,7 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         validated_data.pop("password2")
         password = validated_data.pop("password")
         email = validated_data.pop("email")
+
         return User.objects.create_user(
             password=password,
             email=email,
@@ -87,8 +88,8 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         )
 
 
-class PasswordResetSerializer(serializers.Serializer):
-    """Serializer for requesting password reset."""
+class EmailOnlySerializer(serializers.Serializer):
+    """Serializer for requesting emails for password and other uses."""
 
     email = serializers.EmailField()
 
@@ -104,8 +105,9 @@ class PasswordResetSerializer(serializers.Serializer):
 class PasswordChangeSerializer(serializers.Serializer):
     """Serializer for changing a password via UID + token."""
 
-    uid = serializers.CharField()
-    token = serializers.CharField()
+    #NOTE: removed uid and token fields due to implementation of email service
+    # uid = serializers.CharField()
+    # token = serializers.CharField()
     new_password = serializers.CharField(min_length=8, write_only=True)
     confirm_password = serializers.CharField(min_length=8, write_only=True)
 
@@ -383,3 +385,7 @@ class GeneralSerializer(serializers.Serializer):
         if ServiceAPIKey.objects.filter(name=value).exists():
             raise serializers.ValidationError("Service with this name already exists.")
         return value
+
+
+class MessageSerializer(serializers.Serializer):
+    message = serializers.ReadOnlyField(default='Not Provided')

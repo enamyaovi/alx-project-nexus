@@ -82,6 +82,15 @@ if DEBUG:
             "LOCATION": "redis://127.0.0.1:6379", # type: ignore
         }
     }
+    BASE_URL ='http://127.0.0.1:8000'
+
+    #CELERY SETTINGS DEV
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Or your broker URL
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/1' # Optional: for storing task results
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'UTC' # Or your desired timezone
 else:
     DATABASES = {"default": env.db_url("POSTGRES_URL")}
     CACHES = {
@@ -105,6 +114,15 @@ else:
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+    BASE_URL = env('BASE_URL')
+
+    CELERY_BROKER_URL = env('REDIS_URL')  # Or your broker URL
+    CELERY_RESULT_BACKEND = env('REDIS_URL') 
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'UTC' # Or your desired timezone
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -127,7 +145,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Static & Media
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"  
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
@@ -197,3 +215,17 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "user_id",  # make sure this matches your custom User model
     "USER_ID_CLAIM": "user_id",
 }
+
+#EMAIL SETTINGS
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    SMTP_HOST = 'smtp.gmail.com'
+    EMAIL_USE_TLS = True
+    EMAIL_PORT = 587
+    EMAIL_HOST_USER = env('SEND_FROM_EMAIL')
+    EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+
+# Token expires in 5 hours (in seconds)
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 5  # 5 hours

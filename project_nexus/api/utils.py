@@ -1,9 +1,18 @@
 import json
 from django.core.cache import cache
+from django.conf import settings
+from django.contrib.auth import tokens, get_user_model
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.urls import reverse
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.pagination import PageNumberPagination
 from typing import Any, Dict
 
+User = get_user_model()
+
+from api.tasks import send_email_service
 # Caching Utilities
 def get_or_set_cache(
     key: str,
@@ -130,3 +139,30 @@ class StandardPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = "page_size"
     max_page_size = 50
+
+
+#email utils
+def send_account_activation_email(user):
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = tokens.default_token_generator.make_token(user)
+
+    subject = "Activate Your Account!"
+    path = reverse(
+        'api:users-activate-account',
+        kwargs={'uid': uid, 'token': token}
+    )
+    activation_link = f"{settings.BASE_URL}{path}"
+
+    message = render_to_string(
+        'api/activation_email.txt',
+        context={
+            'email_activation_link': activation_link,
+            'user': user
+        }
+    )
+
+    send_email_service.delay( # type: ignore
+        email_address=user.email,
+        subject=subject,
+        message=message
+    )
